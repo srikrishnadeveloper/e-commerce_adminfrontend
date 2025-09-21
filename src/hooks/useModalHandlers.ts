@@ -1,7 +1,9 @@
 import type { Product, Category } from '../types';
 import type { UseDashboardState } from './useDashboardState';
 
-type ModalHandlersProps = UseDashboardState;
+type ModalHandlersProps = UseDashboardState & {
+  loadProductsForCategory?: (categoryId: string) => Promise<void> | void;
+};
 
 export const useModalHandlers = (state: ModalHandlersProps) => {
   const {
@@ -18,7 +20,7 @@ export const useModalHandlers = (state: ModalHandlersProps) => {
     setIsCategoryViewModalOpen,
     setDeletingCategory,
     setIsCategoryDeleteModalOpen,
-    loadProductsForCategory,
+  loadProductsForCategory,
   } = state;
 
   const handleAddProduct = () => {
@@ -77,14 +79,14 @@ export const useModalHandlers = (state: ModalHandlersProps) => {
   const handleEditCategory = async (category: Category) => {
     setEditingCategory(category);
     setIsCategoryModalOpen(true);
-    if (category._id) {
+    if (category._id && loadProductsForCategory) {
       await loadProductsForCategory(category._id);
     }
   };
 
   const handleViewCategory = async (category: Category) => {
     setViewingCategory(category);
-    if (category._id) {
+    if (category._id && loadProductsForCategory) {
       await loadProductsForCategory(category._id);
     }
     setIsCategoryViewModalOpen(true);

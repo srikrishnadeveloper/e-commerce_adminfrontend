@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 import { AlertTriangle } from 'lucide-react';
 
 interface ConfirmationModalProps {
@@ -19,6 +19,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
+  
   confirmButtonText = 'Confirm',
   cancelButtonText = 'Cancel',
   isDestructive = true,

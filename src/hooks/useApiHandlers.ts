@@ -16,8 +16,7 @@ export const useApiHandlers = (state: ApiHandlersProps) => {
     currentPage,
     searchTerm,
     products,
-    categories,
-    currentSection,
+  categories,
   } = state;
 
   const loadDashboardData = async () => {

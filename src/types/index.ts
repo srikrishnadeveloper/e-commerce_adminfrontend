@@ -1,3 +1,46 @@
+export interface Color {
+  name: string;
+  value: string;
+}
+
+export interface Specifications {
+  [key: string]: string | number | boolean;
+}
+
+export interface ShippingOption {
+  days: string;
+  price: string;
+}
+
+export interface Shipping {
+  standard: ShippingOption;
+  express: ShippingOption;
+  overnight: ShippingOption;
+  international: {
+    days: string;
+    processing: string;
+  };
+}
+
+export interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  status: 'active' | 'disabled';
+  metaTitle?: string;
+  metaDescription?: string;
+  image?: string;
+  displayOrder: number;
+  productCount: number;
+  parentCategory?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  fullSlug: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -12,17 +55,26 @@ export interface Product {
   rating: number;
   reviews: number;
   images: string[];
+  colors: Color[];
+  sizes: string[];
+  features: string[];
+  specifications: Specifications;
+  tags: string[];
+  shipping?: Shipping;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Category {
-  _id: string;
+
+
+export interface ImageFile {
   name: string;
-  slug: string;
-  description: string;
-  image: string;
-  isActive: boolean;
-  sortOrder: number;
-  productCount: number;
-  createdAt: string;
-  updatedAt: string;
+  path: string;
+  size: number;
+  modified: string;
+  extension: string;
+  directory?: string;
 }
+
+// Explicit re-exports to ensure proper module resolution
+export type { Category, Product, Color, Specifications, Shipping, ShippingOption, ImageFile };

@@ -76,6 +76,7 @@ export const useDashboardState = () => {
     setSidebarOpen,
     currentSection,
     setCurrentSection,
+      // Expose functions consumed by other hooks via type-level declaration
   };
 };
 

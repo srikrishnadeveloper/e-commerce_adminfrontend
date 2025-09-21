@@ -28,6 +28,8 @@ import ProductModal from './modals/ProductModal';
 import CategoryModal from './modals/CategoryModal';
 import ProductDetails from './modals/ProductDetails';
 import CategoryDetailsModal from './modals/CategoryDetailsModal';
+import CategoryManagement from '../pages/CategoryManagement';
+import SiteConfigPanel from './SiteConfigPanel';
 import type { Product, Category } from '../types';
 
 const Dashboard: React.FC = () => {
@@ -83,7 +85,7 @@ const Dashboard: React.FC = () => {
         search: searchTerm || undefined
       });
       
-      setProducts(productsResponse.products || []);
+      setProducts(productsResponse.data || []);
       setTotalPages(productsResponse.pagination?.totalPages || 1);
 
       // Load categories
@@ -93,7 +95,7 @@ const Dashboard: React.FC = () => {
         sortOrder: 'asc'
       });
       
-      setCategories(categoriesResponse.categories || []);
+      setCategories(categoriesResponse.data || []);
       
     } catch (error: any) {
       console.error('Error loading dashboard data:', error);
@@ -125,7 +127,7 @@ const Dashboard: React.FC = () => {
         sortOrder: 'asc'
       });
       
-      setCategories(categoriesResponse.categories || []);
+      setCategories(categoriesResponse.data || []);
       setTotalPages(categoriesResponse.pagination?.totalPages || 1);
       
     } catch (error: any) {
@@ -146,7 +148,7 @@ const Dashboard: React.FC = () => {
         search: searchTerm || undefined
       });
       
-      setProducts(response.products || []);
+      setProducts(response.data || []);
       setTotalPages(response.pagination?.totalPages || 1);
       
     } catch (error: any) {
@@ -161,7 +163,7 @@ const Dashboard: React.FC = () => {
     try {
       setIsLoadingCategoryProducts(true);
       const response = await categoriesAPI.getProducts(categoryId, { limit: 100 }); // Fetch up to 100 products
-      setProductsForCategory(response.products || []);
+      setProductsForCategory(response.data || []);
     } catch (error) {
       console.error('Error loading products for category:', error);
       toast.error('Failed to load products for this category.');
@@ -330,44 +332,47 @@ const Dashboard: React.FC = () => {
   const handleEditCategory = async (category: Category) => {
     setEditingCategory(category);
     setIsCategoryModalOpen(true);
-    if (category._id) {
-      await loadProductsForCategory(category._id);
+    const categoryId = String(category.id || category._id);
+    if (categoryId) {
+      await loadProductsForCategory(categoryId);
     }
   };
 
   const handleViewCategory = async (category: Category) => {
     setViewingCategory(category);
-    if (category._id) {
-      await loadProductsForCategory(category._id);
+    const categoryId = String(category.id || category._id);
+    if (categoryId) {
+      await loadProductsForCategory(categoryId);
     }
     setIsCategoryViewModalOpen(true);
   };
 
-  const handleSaveCategory = async (updatedCategory: Omit<Category, '_id' | 'slug' | 'productCount' | 'createdAt' | 'updatedAt'> & { _id?: string }) => {
+  const handleSaveCategory = async (updatedCategory: Omit<Category, '_id' | 'slug' | 'productCount' | 'createdAt' | 'updatedAt'> & { _id?: string; id?: number }) => {
     try {
       setIsLoading(true);
-      
+
       let response: Category;
-      
-      if (updatedCategory._id) {
+      const categoryId = String(updatedCategory.id || updatedCategory._id);
+
+      if (categoryId && categoryId !== 'undefined') {
         // Update existing category
         const loadingToast = toast.loading('Updating category...');
-        response = await categoriesAPI.update(updatedCategory._id, updatedCategory);
-        
+        response = await categoriesAPI.update(categoryId, updatedCategory);
+
         // Optimistic update - immediately update the UI
-        setCategories(categories.map(c => 
-          c._id === updatedCategory._id ? { ...c, ...response } : c
+        setCategories(categories.map(c =>
+          String(c.id || c._id) === categoryId ? { ...c, ...response } : c
         ));
-        
+
         toast.success('Category updated successfully!', { id: loadingToast });
       } else {
         // Create new category
         const loadingToast = toast.loading('Creating category...');
         response = await categoriesAPI.create(updatedCategory);
-        
+
         // Optimistic update - immediately add to UI
         setCategories([response, ...categories]);
-        
+
         toast.success('Category created successfully!', { id: loadingToast });
       }
       
@@ -414,10 +419,11 @@ const Dashboard: React.FC = () => {
       setIsLoading(true);
       const loadingToast = toast.loading(`Deleting ${deletingCategory.name}...`);
       
-      await categoriesAPI.delete(deletingCategory._id, reassignTo);
-      
+      const categoryId = String(deletingCategory.id || deletingCategory._id);
+      await categoriesAPI.delete(categoryId, reassignTo);
+
       // Optimistic update - immediately remove from UI
-      setCategories(categories.filter(c => c._id !== deletingCategory._id));
+      setCategories(categories.filter(c => String(c.id || c._id) !== categoryId));
       
       toast.success(`${deletingCategory.name} deleted successfully!`, { id: loadingToast });
       
@@ -489,7 +495,7 @@ const Dashboard: React.FC = () => {
               <Package className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Products
             </button>
-            <button 
+            <button
               onClick={() => {
                 setCurrentSection('categories');
                 setCurrentPage(1);
@@ -498,6 +504,13 @@ const Dashboard: React.FC = () => {
             >
               <Tags className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Categories
+            </button>
+            <button
+              onClick={() => setCurrentSection('category-management')}
+              className={`${currentSection === 'category-management' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
+            >
+              <FolderOpen className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
+              Category Management
             </button>
             <button 
               onClick={() => setCurrentSection('orders')}
@@ -557,6 +570,7 @@ const Dashboard: React.FC = () => {
                 {currentSection === 'dashboard' && 'Dashboard'}
                 {currentSection === 'products' && 'Products'}
                 {currentSection === 'categories' && 'Categories'}
+                {currentSection === 'category-management' && 'Category Management'}
                 {currentSection === 'orders' && 'Orders'}
                 {currentSection === 'customers' && 'Customers'}
                 {currentSection === 'analytics' && 'Analytics'}
@@ -639,7 +653,7 @@ const Dashboard: React.FC = () => {
                       <div className="relative w-full bg-muted overflow-hidden" style={{ 
                         height: 'clamp(280px, 25vw, 320px)'
                       }}>
-                        {(() => { const resolveImg = (p?: string) => p ? (p.startsWith('http') ? p : `http://localhost:5000/api${p}`) : 'http://localhost:5000/api/images/placeholder.svg'; return (
+                        {(() => { const resolveImg = (p?: string) => p ? (p.startsWith('http') ? p : `http://localhost:5001${p}`) : 'http://localhost:5001/images/placeholder.svg'; return (
                         <img
                           src={resolveImg(product.images?.[0])}
                           alt={product.name}
@@ -835,14 +849,14 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {categories.map((category) => (
-                    <div 
-                      key={category._id} 
+                    <div
+                      key={category.id || category._id}
                       className="relative bg-card border border-border rounded-md overflow-hidden hover:scale-[1.02] hover:shadow-lg transition-all duration-300 flex flex-col p-6"
                     >
                       {/* Category Image */}
                       <div className="relative w-full h-32 bg-muted rounded-sm mb-4 overflow-hidden">
                         {category.image ? (
-                          (() => { const resolveImg = (p?: string) => p ? (p.startsWith('http') ? p : `http://localhost:5000/api${p}`) : 'http://localhost:5000/api/images/placeholder.svg'; return (
+                          (() => { const resolveImg = (p?: string) => p ? (p.startsWith('http') ? p : `http://localhost:5001${p}`) : 'http://localhost:5001/images/placeholder.svg'; return (
                           <img
                             src={resolveImg(category.image)}
                             alt={category.name}
@@ -979,12 +993,12 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
+          {currentSection === 'category-management' && (
+            <CategoryManagement />
+          )}
+
           {currentSection === 'settings' && (
-            <div className="text-center py-20">
-              <Settings className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl text-muted-foreground">Settings</h2>
-              <p className="text-muted-foreground mt-2">Application settings coming soon</p>
-            </div>
+            <SiteConfigPanel />
           )}
         </main>
       </div>
