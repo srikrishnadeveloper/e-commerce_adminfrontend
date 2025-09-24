@@ -7,7 +7,7 @@ import { Label } from '../ui/label';
 import { X, Plus, Trash2, Image as ImageIcon, Code, Eye } from 'lucide-react';
 import { imagesAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import type { Product, Category, ImageFile, Color, Specifications } from '../../types';
+import type { Product, Category, ImageFile } from '../../types';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -48,8 +48,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   );
 
   const [availableImages, setAvailableImages] = useState<ImageFile[]>([]);
-  const [showImageSelector, setShowImageSelector] = useState(false);
-  const [showRawJson, setShowRawJson] = useState(false);
+
   const [rawJsonData, setRawJsonData] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'images' | 'shipping' | 'json'>('basic');

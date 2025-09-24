@@ -5,41 +5,17 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { X } from 'lucide-react';
+import ImageSelectorModal from './ImageSelectorModal';
 
-// Add Product interface
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice: number;
-  category: string;
-  categoryId: string;
-  inStock: boolean;
-  bestseller: boolean;
-  featured: boolean;
-  rating: number;
-  reviews: number;
-  images: string[];
-}
+import type { Product, Category } from '../../types';
 
-interface Category {
-  _id: string;
-  name: string;
-  slug: string;
-  description: string;
-  image: string;
-  isActive: boolean;
-  sortOrder: number;
-  productCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+
+
 
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (category: Omit<Category, '_id' | 'slug' | 'productCount' | 'createdAt' | 'updatedAt'> & { _id?: string }) => void;
+  onSave: (category: Omit<Category, '_id' | 'slug' | 'productCount' | 'createdAt' | 'updatedAt'> & { _id?: string; id?: number }) => void | Promise<void>;
   category: Category | null;
   products: Product[];
   isLoadingProducts: boolean;
@@ -65,12 +41,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
     sortOrder: 0
   });
 
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+
   useEffect(() => {
     if (category) {
       setFormData({
         name: category.name,
-        description: category.description,
-        image: category.image,
+        description: category.description || '',
+        image: category.image || '',
         isActive: category.isActive,
         sortOrder: category.sortOrder
       });
@@ -89,6 +67,9 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
     e.preventDefault();
     onSave({
       ...formData,
+      status: category?.status ?? 'active',
+      displayOrder: category?.displayOrder ?? 0,
+      fullSlug: category?.fullSlug ?? '',
       _id: category?._id
     });
   };
@@ -97,9 +78,9 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-card border border-border rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl font-semibold text-foreground">
             {category ? 'Edit Category' : 'Create Category'}
           </h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -135,12 +116,26 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
               <div>
                 <Label htmlFor="image">Image URL</Label>
-                <Input
-                  id="image"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="Enter image URL"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="image"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="Enter image URL"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setImagePickerOpen(true)}>
+                    Select
+                  </Button>
+                </div>
+                {formData.image && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.image.startsWith('http') ? formData.image : `http://localhost:5001${formData.image}`}
+                      alt="Category"
+                      className="w-24 h-24 object-cover rounded border"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -158,7 +153,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                 <Checkbox
                   id="isActive"
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked as boolean })}
+                  onCheckedChange={(checked: any) => setFormData({ ...formData, isActive: Boolean(checked) })}
                 />
                 <Label htmlFor="isActive">Active</Label>
               </div>
@@ -176,24 +171,24 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
           {/* Products in Category */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
               Products in Category ({products.length})
             </h3>
 
             {isLoadingProducts ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {products.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No products in this category</p>
+                  <p className="text-muted-foreground text-center py-8">No products in this category</p>
                 ) : (
                   products.map((product) => (
                     <div
                       key={product._id}
                       onClick={() => onProductClick(product)}
-                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="p-3 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center space-x-3">
                         {product.images && product.images[0] && (
@@ -204,32 +199,32 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                          <h4 className="text-sm font-medium text-foreground truncate">
                             {product.name}
                           </h4>
                           <div className="flex items-center space-x-2 mt-1">
-                            <span className="text-sm font-semibold text-green-600">
+                            <span className="text-sm font-semibold text-green-400">
                               {formatPrice(product.price)}
                             </span>
                             {product.originalPrice && product.originalPrice > product.price && (
-                              <span className="text-xs text-gray-500 line-through">
+                              <span className="text-xs text-muted-foreground line-through">
                                 {formatPrice(product.originalPrice)}
                               </span>
                             )}
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
                             {product.inStock ? (
-                              <span className="text-xs text-green-600">In Stock</span>
+                              <span className="text-xs text-green-400">In Stock</span>
                             ) : (
-                              <span className="text-xs text-red-600">Out of Stock</span>
+                              <span className="text-xs text-red-400">Out of Stock</span>
                             )}
                             {product.featured && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                              <span className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded">
                                 Featured
                               </span>
                             )}
                             {product.bestseller && (
-                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                              <span className="text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded">
                                 Bestseller
                               </span>
                             )}
@@ -244,6 +239,17 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
           </div>
         </div>
       </div>
+      {imagePickerOpen && (
+        <ImageSelectorModal
+          isOpen={imagePickerOpen}
+          onClose={() => setImagePickerOpen(false)}
+          onSelect={(p) => {
+            setFormData(prev => ({ ...prev, image: p }));
+            setImagePickerOpen(false);
+          }}
+        />
+      )}
+
     </div>
   );
 };

@@ -35,6 +35,11 @@ export const useModalHandlers = (state: ModalHandlersProps) => {
       rating: 0,
       reviews: 0,
       images: [],
+      colors: [],
+      sizes: [],
+      features: [],
+      specifications: {},
+      tags: [],
       inStock: true,
       bestseller: false,
       featured: false,
@@ -61,15 +66,23 @@ export const useModalHandlers = (state: ModalHandlersProps) => {
   const handleAddCategory = () => {
     const newCategory: Category = {
       _id: '',
+      id: undefined,
       name: '',
       slug: '',
       description: '',
+      status: 'active',
+      metaTitle: '',
+      metaDescription: '',
       image: '',
-      isActive: true,
+      displayOrder: 0,
       sortOrder: 0,
       productCount: 0,
+      parentCategory: undefined,
+      adminNotes: '',
       createdAt: '',
       updatedAt: '',
+      isActive: true,
+      fullSlug: '',
     };
     setEditingCategory(newCategory);
     setProductsForCategory([]);

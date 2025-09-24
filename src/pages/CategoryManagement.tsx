@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Category } from '../types/index';
 import CategoryFormModal from '../components/modals/CategoryFormModal';
+import { categoriesAPI, ensureApiBase } from '../services/api';
 
 const CategoryManagement: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -20,11 +21,11 @@ const CategoryManagement: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/categories?includeProductCount=true');
-      const data = await response.json();
-      
-      if (data.success) {
-        setCategories(data.data);
+      await ensureApiBase();
+      const response = await categoriesAPI.getAll({ includeProductCount: true });
+
+      if (response.success) {
+        setCategories(response.data || []);
       } else {
         setError('Failed to fetch categories');
       }
@@ -50,27 +51,21 @@ const CategoryManagement: React.FC = () => {
 
   const handleSaveCategory = async (categoryData: Partial<Category>) => {
     try {
-      const url = modalMode === 'create' 
-        ? 'http://localhost:5001/api/categories'
-        : `http://localhost:5001/api/categories/${selectedCategory?._id}`;
-      
-      const method = modalMode === 'create' ? 'POST' : 'PUT';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData),
-      });
+      await ensureApiBase();
 
-      const data = await response.json();
-      
-      if (data.success) {
+      let response;
+      if (modalMode === 'create') {
+        response = await categoriesAPI.create(categoryData);
+      } else {
+        response = await categoriesAPI.update(selectedCategory?._id || '', categoryData);
+      }
+
+      if (response.success) {
         await fetchCategories();
         setIsModalOpen(false);
+        setError(null);
       } else {
-        setError(data.message || 'Failed to save category');
+        setError(response.message || 'Failed to save category');
       }
     } catch (err) {
       setError('Error saving category');
@@ -84,16 +79,14 @@ const CategoryManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/categories/${categoryId}`, {
-        method: 'DELETE',
-      });
+      await ensureApiBase();
+      const response = await categoriesAPI.delete(categoryId);
 
-      const data = await response.json();
-      
-      if (data.success) {
+      if (response.success) {
         await fetchCategories();
+        setError(null);
       } else {
-        setError(data.message || 'Failed to delete category');
+        setError(response.message || 'Failed to delete category');
       }
     } catch (err) {
       setError('Error deleting category');
@@ -103,16 +96,19 @@ const CategoryManagement: React.FC = () => {
 
   const handleToggleStatus = async (categoryId: string) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/categories/${categoryId}/toggle-status`, {
-        method: 'PATCH',
-      });
+      await ensureApiBase();
+      // Find the category to toggle its status
+      const category = categories.find(cat => cat._id === categoryId);
+      if (!category) return;
 
-      const data = await response.json();
-      
-      if (data.success) {
+      const newStatus = category.status === 'active' ? 'disabled' : 'active';
+      const response = await categoriesAPI.update(categoryId, { status: newStatus });
+
+      if (response.success) {
         await fetchCategories();
+        setError(null);
       } else {
-        setError(data.message || 'Failed to toggle category status');
+        setError(response.message || 'Failed to toggle category status');
       }
     } catch (err) {
       setError('Error toggling category status');
@@ -127,24 +123,22 @@ const CategoryManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5001/api/categories/bulk-status', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          categoryIds: selectedCategories,
-          status,
-        }),
-      });
+      await ensureApiBase();
 
-      const data = await response.json();
-      
-      if (data.success) {
+      // Update each category individually since we don't have a bulk API
+      const updatePromises = selectedCategories.map(categoryId =>
+        categoriesAPI.update(categoryId, { status })
+      );
+
+      const results = await Promise.all(updatePromises);
+      const failedUpdates = results.filter(result => !result.success);
+
+      if (failedUpdates.length === 0) {
         await fetchCategories();
         setSelectedCategories([]);
+        setError(null);
       } else {
-        setError(data.message || 'Failed to update categories');
+        setError(`Failed to update ${failedUpdates.length} categories`);
       }
     } catch (err) {
       setError('Error updating categories');
@@ -186,21 +180,21 @@ const CategoryManagement: React.FC = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Category Management</h1>
+        <h1 className="text-2xl font-bold text-foreground">Category Management</h1>
         <button
           onClick={handleCreateCategory}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
         >
           Create Category
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-4">
           {error}
           <button
             onClick={() => setError(null)}
-            className="float-right text-red-700 hover:text-red-900"
+            className="float-right text-destructive hover:text-destructive/80"
           >
             ×
           </button>
@@ -208,7 +202,7 @@ const CategoryManagement: React.FC = () => {
       )}
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-card border border-border rounded-lg shadow p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -256,97 +250,97 @@ const CategoryManagement: React.FC = () => {
       </div>
 
       {/* Categories Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-card border border-border rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <input
                   type="checkbox"
                   checked={selectedCategories.length === filteredCategories.length && filteredCategories.length > 0}
                   onChange={handleSelectAll}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-border text-primary focus:ring-ring bg-background"
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Products
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Display Order
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Created
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-card divide-y divide-border">
             {filteredCategories.map((category) => (
-              <tr key={category._id} className="hover:bg-gray-50">
+              <tr key={category._id} className="hover:bg-muted/50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
                     checked={selectedCategories.includes(category._id)}
                     onChange={() => handleSelectCategory(category._id)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-border text-primary focus:ring-ring bg-background"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                    <div className="text-sm text-gray-500">{category.slug}</div>
+                    <div className="text-sm font-medium text-foreground">{category.name}</div>
+                    <div className="text-sm text-muted-foreground">{category.slug}</div>
                     {category.description && (
-                      <div className="text-sm text-gray-500 truncate max-w-xs">{category.description}</div>
+                      <div className="text-sm text-muted-foreground truncate max-w-xs">{category.description}</div>
                     )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    category.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
+                    category.status === 'active'
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : 'bg-red-500/10 text-red-400 border border-red-500/20'
                   }`}>
                     {category.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                   {category.productCount}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                   {category.displayOrder}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                   {new Date(category.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEditCategory(category)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-primary hover:text-primary/80"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleToggleStatus(category._id)}
                       className={`${
-                        category.status === 'active' 
-                          ? 'text-red-600 hover:text-red-900' 
-                          : 'text-green-600 hover:text-green-900'
+                        category.status === 'active'
+                          ? 'text-red-400 hover:text-red-300'
+                          : 'text-green-400 hover:text-green-300'
                       }`}
                     >
                       {category.status === 'active' ? 'Disable' : 'Enable'}
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(category._id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-400 hover:text-red-300"
                     >
                       Delete
                     </button>
@@ -358,7 +352,7 @@ const CategoryManagement: React.FC = () => {
         </table>
 
         {filteredCategories.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             No categories found matching your criteria.
           </div>
         )}

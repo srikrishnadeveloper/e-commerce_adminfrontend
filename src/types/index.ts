@@ -24,6 +24,7 @@ export interface Shipping {
 
 export interface Category {
   _id: string;
+  id?: string | number;
   name: string;
   slug: string;
   description?: string;
@@ -32,6 +33,7 @@ export interface Category {
   metaDescription?: string;
   image?: string;
   displayOrder: number;
+  sortOrder: number;
   productCount: number;
   parentCategory?: string;
   adminNotes?: string;
@@ -77,4 +79,4 @@ export interface ImageFile {
 }
 
 // Explicit re-exports to ensure proper module resolution
-export type { Category, Product, Color, Specifications, Shipping, ShippingOption, ImageFile };
+

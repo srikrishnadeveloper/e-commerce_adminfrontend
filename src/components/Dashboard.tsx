@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { productsAPI, categoriesAPI } from '../services/api';
+import { productsAPI, categoriesAPI, ensureApiBase } from '../services/api';
 import { Button } from './ui/button';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
@@ -77,7 +77,10 @@ const Dashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      
+
+      // Ensure API base is reachable (auto-detect 5001/5000)
+      await ensureApiBase();
+
       // Load products
       const productsResponse = await productsAPI.getAll({
         page: currentPage,
@@ -300,6 +303,11 @@ const Dashboard: React.FC = () => {
       rating: 0,
       reviews: 0,
       images: [],
+      colors: [],
+      sizes: [],
+      features: [],
+      specifications: {},
+      tags: [],
       inStock: true,
       bestseller: false,
       featured: false
@@ -313,15 +321,23 @@ const Dashboard: React.FC = () => {
   const handleAddCategory = () => {
     const newCategory: Category = {
       _id: '',
+      id: undefined,
       name: '',
       slug: '',
       description: '',
+      status: 'active',
+      metaTitle: '',
+      metaDescription: '',
       image: '',
-      isActive: true,
+      displayOrder: 0,
       sortOrder: 0,
       productCount: 0,
+      parentCategory: undefined,
+      adminNotes: '',
       createdAt: '',
-      updatedAt: ''
+      updatedAt: '',
+      isActive: true,
+      fullSlug: ''
     };
     
     setEditingCategory(newCategory);

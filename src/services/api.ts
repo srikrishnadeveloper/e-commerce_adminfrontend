@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5001/api';
+// Candidate API bases in priority order
+const CANDIDATE_BASES = [
+  (import.meta as any)?.env?.VITE_API_BASE as string | undefined,
+  'http://localhost:5001/api',
+  'http://localhost:5000/api',
+].filter(Boolean) as string[];
+
+let API_BASE_URL = CANDIDATE_BASES[0];
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -9,6 +16,29 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+export const setApiBase = (base: string) => {
+  API_BASE_URL = base.replace(/\/+$/, '');
+  api.defaults.baseURL = API_BASE_URL;
+};
+
+export const getApiBase = () => API_BASE_URL;
+
+// Try candidates until one responds to /health
+export const ensureApiBase = async () => {
+  for (const base of CANDIDATE_BASES) {
+    try {
+      const res = await fetch(`${base.replace(/\/+$/, '')}/health`, { method: 'GET' });
+      if (res.ok) {
+        setApiBase(base);
+        return base;
+      }
+    } catch (_) {
+      // try next
+    }
+  }
+  return API_BASE_URL;
+};
 
 // Products API
 export const productsAPI = {
@@ -109,6 +139,7 @@ export const categoriesAPI = {
     sortBy?: string;
     sortOrder?: string;
     isActive?: boolean;
+    includeProductCount?: boolean;
   }) => {
     const response = await api.get('/categories', { params });
     return response.data;

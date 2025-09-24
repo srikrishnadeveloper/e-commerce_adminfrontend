@@ -1,34 +1,9 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import type { Product, Category } from '../../types';
 
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice: number;
-  category: string;
-  categoryId: string;
-  inStock: boolean;
-  bestseller: boolean;
-  featured: boolean;
-  rating: number;
-  reviews: number;
-  images: string[];
-}
 
-interface Category {
-  _id: string;
-  name: string;
-  slug: string;
-  description: string;
-  image: string;
-  isActive: boolean;
-  sortOrder: number;
-  productCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+
 
 const resolveImg = (p?: string) => {
   if (!p) return 'http://localhost:5001/images/placeholder.svg';
@@ -53,8 +28,8 @@ const CategoryDetailsView: React.FC<{
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Status</span>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                category.isActive 
-                  ? 'bg-green-500/10 text-green-400' 
+                category.isActive
+                  ? 'bg-green-500/10 text-green-400'
                   : 'bg-red-500/10 text-red-400'
               }`}>
                 {category.isActive ? 'Active' : 'Inactive'}
@@ -85,13 +60,13 @@ const CategoryDetailsView: React.FC<{
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-1">
             {products.map(product => (
-              <div 
+              <div
                 key={product._id}
                 onClick={() => onProductClick(product)}
                 className="bg-muted/50 border border-border rounded-md p-3 cursor-pointer hover:bg-muted transition-colors"
               >
                 <div className="flex items-center space-x-3">
-                  <img 
+                  <img
                     src={resolveImg(product.images?.[0])}
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-sm"
