@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
-import { X, Plus, Trash2, Image as ImageIcon, Code, Eye } from 'lucide-react';
+import { X, Plus, Trash2, Image as ImageIcon, Code, Eye, Upload, CloudUpload } from 'lucide-react';
 import { imagesAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import type { Product, Category, ImageFile } from '../../types';
@@ -29,7 +29,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       categoryId: '',
       inStock: true,
       bestseller: false,
-      featured: false,
+      hotDeal: false,
       rating: 0,
       reviews: 0,
       images: [],
@@ -38,16 +38,21 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       features: [],
       specifications: {},
       tags: [],
+      stockQuantity: 0,
+      trackInventory: true,
       shipping: {
-        standard: { days: "5-7 business days", price: "FREE on orders over $50" },
-        express: { days: "2-3 business days", price: "$9.99" },
-        overnight: { days: "1 business day", price: "$19.99" },
+        standard: { days: "5-7 business days", price: "FREE on orders over ₹500" },
+        express: { days: "2-3 business days", price: "₹99" },
+        overnight: { days: "1 business day", price: "₹199" },
         international: { days: "12-25 business days depending on location", processing: "Orders are processed within 1-2 business days" }
       },
     }
   );
 
   const [availableImages, setAvailableImages] = useState<ImageFile[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [rawJsonData, setRawJsonData] = useState('');
   const [jsonError, setJsonError] = useState('');
@@ -65,7 +70,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         categoryId: '',
         inStock: true,
         bestseller: false,
-        featured: false,
+        hotDeal: false,
         rating: 0,
         reviews: 0,
         images: [],
@@ -74,6 +79,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         features: [],
         specifications: {},
         tags: [],
+        stockQuantity: 0,
+        trackInventory: true,
       }
     );
 
@@ -99,6 +106,75 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     }
   };
 
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(file => {
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+      return ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext);
+    });
+
+    if (validFiles.length === 0) {
+      toast.error('Please select valid image files (PNG, JPG, JPEG, GIF, WebP, SVG)');
+      return;
+    }
+
+    if (validFiles.length > 10) {
+      toast.error('Maximum 10 files can be uploaded at once');
+      return;
+    }
+
+    const oversizedFiles = validFiles.filter(file => file.size > 10 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      toast.error('Some files are too large. Maximum file size is 10MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      validFiles.forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await imagesAPI.upload(formData);
+      toast.success(`Successfully uploaded ${response.count} image(s)`);
+
+      // Reload images list
+      await loadAvailableImages();
+
+      // Auto-select the uploaded images
+      if (response.data && response.data.length > 0) {
+        const newImagePaths = response.data.map((img: any) => img.path);
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, ...newImagePaths]
+        }));
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error?.response?.data?.message || 'Failed to upload images');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
   if (!isOpen) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -111,7 +187,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     }
   };
 
-  const handleCheckboxChange = (name: 'inStock' | 'bestseller' | 'featured') => {
+  const handleCheckboxChange = (name: 'inStock' | 'bestseller' | 'hotDeal') => {
     setFormData((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
@@ -236,7 +312,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       tags: formData.tags.filter(tag => tag && tag.trim()),
       sizes: formData.sizes.filter(size => size && size.trim()),
       // Ensure specifications is an object
-      specifications: formData.specifications || {}
+      specifications: formData.specifications || {},
     };
 
     // Remove virtual fields that shouldn't be sent to API
@@ -257,7 +333,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-4 border-b">
+        <div className="flex space-x-1 mb-4 border-b overflow-x-auto">
           {[
             { key: 'basic', label: 'Basic Info', icon: null },
             { key: 'advanced', label: 'Advanced', icon: null },
@@ -414,11 +490,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="featured"
-                      checked={formData.featured}
-                      onCheckedChange={() => handleCheckboxChange('featured')}
+                      id="hotDeal"
+                      checked={formData.hotDeal}
+                      onCheckedChange={() => handleCheckboxChange('hotDeal')}
                     />
-                    <Label htmlFor="featured">Featured</Label>
+                    <Label htmlFor="hotDeal">Hot Deals</Label>
                   </div>
                 </div>
               </div>
@@ -512,7 +588,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {Object.entries(formData.specifications).map(([key, value]) => (
+                    {Object.entries(formData.specifications || {}).map(([key, value]) => (
                       <div key={key} className="flex items-center space-x-2">
                         <Input
                           value={key}
@@ -552,7 +628,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                         <img
                           src={`http://localhost:5001${imagePath}`}
                           alt={`Product image ${index + 1}`}
-                          className="w-full h-24 object-cover rounded border"
+                          className="w-full h-24 max-w-full max-h-24 object-cover rounded border"
+                          style={{
+                            minHeight: '96px',
+                            maxHeight: '96px',
+                            minWidth: '100%',
+                            maxWidth: '100%',
+                            objectFit: 'cover'
+                          }}
                         />
                         <Button
                           type="button"
@@ -571,20 +654,81 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   </div>
                 </div>
 
+                {/* Upload Section */}
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <CloudUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">
+                    {dragOver ? 'Drop images here' : 'Drag and drop images here, or click to select'}
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="mb-2"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Select Images'}
+                  </Button>
+                  <p className="text-xs text-gray-500">
+                    Supports PNG, JPG, JPEG, GIF, WebP, SVG (max 10MB each, 10 files max)
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e.target.files)}
+                    className="hidden"
+                  />
+                </div>
+
                 {/* Available Images */}
                 <div>
-                  <Label>Available Images</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Available Images ({availableImages.length})</Label>
+                    <Button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add More
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-2 max-h-64 overflow-y-auto border rounded p-2">
-                    {availableImages.map((image, index) => (
+                    {availableImages.length === 0 ? (
+                      <div className="col-span-full text-center py-8 text-gray-500">
+                        <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p>No images available</p>
+                        <p className="text-xs">Upload some images to get started</p>
+                      </div>
+                    ) : (
+                      availableImages.map((image, index) => (
                       <div key={index} className="relative group cursor-pointer">
                         <img
                           src={`http://localhost:5001${image.path}`}
                           alt={image.name}
-                          className={`w-full h-16 object-cover rounded border-2 transition-all ${
+                          className={`w-full h-16 max-w-full max-h-16 object-cover rounded border-2 transition-all ${
                             formData.images.includes(image.path)
                               ? 'border-blue-500 opacity-50'
                               : 'border-gray-300 hover:border-blue-300'
                           }`}
+                          style={{
+                            minHeight: '64px',
+                            maxHeight: '64px',
+                            minWidth: '100%',
+                            maxWidth: '100%',
+                            objectFit: 'cover'
+                          }}
                           onClick={() => handleImageSelect(image.path)}
                         />
                         <div className="text-xs text-gray-500 mt-1 truncate">
@@ -598,7 +742,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                           </div>
                         )}
                       </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

@@ -17,6 +17,34 @@ const api = axios.create({
   },
 });
 
+// Add request interceptor to attach token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('adminToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+    // console.log('Attaching token to request:', config.url);
+  } else {
+    console.warn('No adminToken found in localStorage');
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+// Add response interceptor to handle 401s
+api.interceptors.response.use((response) => {
+  return response;
+}, (error) => {
+  if (error.response && error.response.status === 401) {
+    console.error('Unauthorized access. Redirecting to login...');
+    // Optional: Clear token and redirect
+    // localStorage.removeItem('adminToken');
+    // window.location.href = '/login'; 
+    // (Better to handle this in the UI or a dedicated auth handler to avoid loops)
+  }
+  return Promise.reject(error);
+});
+
 export const setApiBase = (base: string) => {
   API_BASE_URL = base.replace(/\/+$/, '');
   api.defaults.baseURL = API_BASE_URL;
@@ -47,7 +75,7 @@ export const productsAPI = {
     limit?: number;
     category?: string;
     bestseller?: boolean;
-    featured?: boolean;
+    hotDeal?: boolean;
     inStock?: boolean;
     search?: string;
   }) => {
@@ -75,7 +103,7 @@ export const productsAPI = {
     return response.data;
   },
   
-  updateStatus: async (id: string, status: { bestseller?: boolean; featured?: boolean; inStock?: boolean }) => {
+  updateStatus: async (id: string, status: { bestseller?: boolean; hotDeal?: boolean; inStock?: boolean }) => {
     const response = await api.patch(`/products/${id}/status`, status);
     return response.data;
   },
@@ -127,6 +155,18 @@ export const imagesAPI = {
   getAll: async () => {
     const response = await api.get('/images');
     return response.data;
+  },
+  upload: async (formData: FormData) => {
+    const response = await api.post('/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+  delete: async (filename: string) => {
+    const response = await api.delete(`/images/${filename}`);
+    return response.data;
   }
 };
 
@@ -157,7 +197,7 @@ export const categoriesAPI = {
     sortBy?: string;
     sortOrder?: string;
     inStock?: boolean;
-    featured?: boolean;
+    hotDeal?: boolean;
     bestseller?: boolean;
   }) => {
     const response = await api.get(`/categories/${id}/products`, { params });

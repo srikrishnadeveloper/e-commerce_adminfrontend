@@ -3,6 +3,20 @@ export interface Color {
   value: string;
 }
 
+export interface ProductVariant {
+  _id?: string;
+  sku?: string;
+  size?: string;
+  color?: Color;
+  price?: number;
+  originalPrice?: number;
+  stockQuantity: number;
+  reservedQuantity?: number;
+  inStock: boolean;
+  images?: string[];
+  isActive: boolean;
+}
+
 export interface Specifications {
   [key: string]: string | number | boolean;
 }
@@ -53,7 +67,7 @@ export interface Product {
   categoryId: string;
   inStock: boolean;
   bestseller: boolean;
-  featured: boolean;
+  hotDeal: boolean;
   rating: number;
   reviews: number;
   images: string[];
@@ -63,6 +77,11 @@ export interface Product {
   specifications: Specifications;
   tags: string[];
   shipping?: Shipping;
+  stockQuantity?: number;
+  reservedQuantity?: number;
+  lowStockThreshold?: number;
+  trackInventory?: boolean;
+  allowBackorder?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

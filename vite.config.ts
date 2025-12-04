@@ -15,13 +15,18 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8090,
+    port: 8091,
     proxy: {
       // Proxy core backend APIs (running on 5001)
       '/siteconfig-api': {
         target: 'http://localhost:5001',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/siteconfig-api/, '/api'),
+      },
+      // Proxy analytics API
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
       },
     },
   },

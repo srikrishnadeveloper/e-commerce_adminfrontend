@@ -228,7 +228,14 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
                 <img
                   src={(formData.image || '').startsWith('http') ? (formData.image as string) : `http://localhost:5001${formData.image}`}
                   alt="Category"
-                  className="w-24 h-24 object-cover rounded border border-border"
+                  className="w-24 h-24 max-w-24 max-h-24 object-cover rounded border border-border"
+                  style={{
+                    minHeight: '96px',
+                    maxHeight: '96px',
+                    minWidth: '96px',
+                    maxWidth: '96px',
+                    objectFit: 'cover'
+                  }}
                 />
               </div>
             )}

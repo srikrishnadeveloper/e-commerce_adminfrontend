@@ -132,7 +132,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                     <img
                       src={formData.image.startsWith('http') ? formData.image : `http://localhost:5001${formData.image}`}
                       alt="Category"
-                      className="w-24 h-24 object-cover rounded border"
+                      className="w-24 h-24 max-w-24 max-h-24 object-cover rounded border"
+                      style={{
+                        minHeight: '96px',
+                        maxHeight: '96px',
+                        minWidth: '96px',
+                        maxWidth: '96px',
+                        objectFit: 'cover'
+                      }}
                     />
                   </div>
                 )}
@@ -195,7 +202,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                           <img
                             src={product.images[0]}
                             alt={product.name}
-                            className="w-12 h-12 object-cover rounded"
+                            className="w-12 h-12 max-w-12 max-h-12 object-cover rounded"
+                            style={{
+                              minHeight: '48px',
+                              maxHeight: '48px',
+                              minWidth: '48px',
+                              maxWidth: '48px',
+                              objectFit: 'cover'
+                            }}
                           />
                         )}
                         <div className="flex-1 min-w-0">

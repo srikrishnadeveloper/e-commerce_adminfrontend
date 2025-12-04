@@ -31,6 +31,7 @@ import AnnouncementTab from './siteconfig/AnnouncementTab';
 import HomepageTab from './siteconfig/HomepageTab';
 import HeroTab from './siteconfig/HeroTab';
 import FooterTab from './siteconfig/FooterTab';
+import ContactUsTab from './siteconfig/ContactUsTab';
 
 import JsonTab from './siteconfig/JsonTab';
 
@@ -64,6 +65,7 @@ const SiteConfigPanel: React.FC = () => {
     { id: 'homepage', label: 'Homepage', icon: Home },
     { id: 'hero', label: 'Hero Section', icon: Image },
     { id: 'footer', label: 'Footer', icon: Building },
+    { id: 'contactus', label: 'Contact Us', icon: MessageSquare },
 
     { id: 'json', label: 'Raw JSON', icon: Code }
   ];
@@ -142,7 +144,8 @@ const SiteConfigPanel: React.FC = () => {
 
   const updateConfig = (path: string, value: any) => {
     setConfig(prev => {
-      const newConfig = { ...prev };
+      // Deep clone to avoid mutation issues with React StrictMode
+      const newConfig = JSON.parse(JSON.stringify(prev));
       const keys = path.split('.');
       let current = newConfig;
 
@@ -161,7 +164,8 @@ const SiteConfigPanel: React.FC = () => {
 
   const addArrayItem = (path: string, item: any) => {
     setConfig(prev => {
-      const newConfig = { ...prev };
+      // Deep clone to avoid mutation issues with React StrictMode
+      const newConfig = JSON.parse(JSON.stringify(prev));
       const keys = path.split('.');
       let current = newConfig;
 
@@ -184,7 +188,8 @@ const SiteConfigPanel: React.FC = () => {
 
   const removeArrayItem = (path: string, index: number) => {
     setConfig(prev => {
-      const newConfig = { ...prev };
+      // Deep clone to avoid mutation issues with React StrictMode
+      const newConfig = JSON.parse(JSON.stringify(prev));
       const keys = path.split('.');
       let current = newConfig;
 
@@ -300,6 +305,8 @@ const SiteConfigPanel: React.FC = () => {
           <AnnouncementTab
             config={config}
             updateConfig={updateConfig}
+            addArrayItem={addArrayItem}
+            removeArrayItem={removeArrayItem}
           />
         );
       case 'homepage':
@@ -328,6 +335,15 @@ const SiteConfigPanel: React.FC = () => {
       case 'footer':
         return (
           <FooterTab
+            config={config}
+            updateConfig={updateConfig}
+            addArrayItem={addArrayItem}
+            removeArrayItem={removeArrayItem}
+          />
+        );
+      case 'contactus':
+        return (
+          <ContactUsTab
             config={config}
             updateConfig={updateConfig}
             addArrayItem={addArrayItem}

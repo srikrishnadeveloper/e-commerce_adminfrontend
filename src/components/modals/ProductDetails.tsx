@@ -28,9 +28,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ isOpen, onClose, produc
   if (!isOpen || !product) return null;
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(price);
   };
 

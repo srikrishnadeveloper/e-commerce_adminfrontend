@@ -10,6 +10,7 @@ interface SiteConfig {
       heading: string;
       subheading: string;
       button: string;
+      buttonLink: string;
       image: string;
     }>;
   };
@@ -41,6 +42,7 @@ const HeroTab: React.FC<HeroTabProps> = ({
           heading: '',
           subheading: '',
           button: '',
+          buttonLink: '',
           image: ''
         })}
         size="sm"
@@ -76,6 +78,14 @@ const HeroTab: React.FC<HeroTabProps> = ({
                 value={slide.button}
                 onChange={(e) => updateConfig(`hero.slides.${index}.button`, e.target.value)}
                 placeholder="Shop Now"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Button Link</label>
+              <Input
+                value={slide.buttonLink || ''}
+                onChange={(e) => updateConfig(`hero.slides.${index}.buttonLink`, e.target.value)}
+                placeholder="/products"
               />
             </div>
             <div>

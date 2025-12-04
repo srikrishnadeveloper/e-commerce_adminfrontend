@@ -23,16 +23,29 @@ import {
   Tags,
   FolderOpen,
   TrendingUp,
+  Mail,
+  Download,
+  LogOut,
 } from 'lucide-react';
 import ProductModal from './modals/ProductModal';
 import CategoryModal from './modals/CategoryModal';
 import ProductDetails from './modals/ProductDetails';
 import CategoryDetailsModal from './modals/CategoryDetailsModal';
 import CategoryManagement from '../pages/CategoryManagement';
+import CustomerManagement from '../pages/CustomerManagement';
+import OrderManagement from '../pages/OrderManagement';
+import OrderAnalytics from '../pages/OrderAnalytics';
+import Analytics from '../pages/Analytics';
+import BulkEmailSender from '../pages/BulkEmailSender';
+import ExportReports from '../pages/ExportReports';
 import SiteConfigPanel from './SiteConfigPanel';
 import type { Product, Category } from '../types';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +71,7 @@ const Dashboard: React.FC = () => {
   const [isLoadingCategoryProducts, setIsLoadingCategoryProducts] = useState(false);
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentSection, setCurrentSection] = useState<string>('products');
+  const [currentSection, setCurrentSection] = useState<string>('analytics');
 
   useEffect(() => {
     if (currentSection === 'categories') {
@@ -177,9 +190,9 @@ const Dashboard: React.FC = () => {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(price);
   };
 
@@ -494,13 +507,6 @@ const Dashboard: React.FC = () => {
         <nav className="mt-8 px-4">
           <div className="space-y-1">
             <button 
-              onClick={() => setCurrentSection('dashboard')}
-              className={`${currentSection === 'dashboard' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
-            >
-              <Home className="text-foreground mr-3 h-5 w-5" />
-              Dashboard
-            </button>
-            <button 
               onClick={() => {
                 setCurrentSection('products');
                 setSelectedCategoryForProducts('');
@@ -528,26 +534,43 @@ const Dashboard: React.FC = () => {
               <FolderOpen className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Category Management
             </button>
-            <button 
+            <button
               onClick={() => setCurrentSection('orders')}
               className={`${currentSection === 'orders' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
             >
               <ShoppingCart className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Orders
             </button>
-            <button 
-              onClick={() => setCurrentSection('customers')}
+            <button
+              onClick={() => {
+                setCurrentSection('customers');
+                setCurrentPage(1);
+              }}
               className={`${currentSection === 'customers' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
             >
               <Users className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Customers
             </button>
-            <button 
+            <button
               onClick={() => setCurrentSection('analytics')}
               className={`${currentSection === 'analytics' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
             >
               <BarChart3 className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Analytics
+            </button>
+            <button
+              onClick={() => setCurrentSection('bulk-email')}
+              className={`${currentSection === 'bulk-email' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
+            >
+              <Mail className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
+              Bulk Email
+            </button>
+            <button
+              onClick={() => setCurrentSection('export')}
+              className={`${currentSection === 'export' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
+            >
+              <Download className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
+              Export Reports
             </button>
           </div>
           
@@ -558,6 +581,13 @@ const Dashboard: React.FC = () => {
             >
               <Settings className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Settings
+            </button>
+            <button 
+              onClick={onLogout}
+              className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10 group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left mt-1"
+            >
+              <LogOut className="text-muted-foreground group-hover:text-red-500 mr-3 h-5 w-5" />
+              Logout
             </button>
           </div>
         </nav>
@@ -583,7 +613,6 @@ const Dashboard: React.FC = () => {
                 <Menu className="h-5 w-5" />
               </Button>
               <h1 className="text-2xl font-bold text-foreground">
-                {currentSection === 'dashboard' && 'Dashboard'}
                 {currentSection === 'products' && 'Products'}
                 {currentSection === 'categories' && 'Categories'}
                 {currentSection === 'category-management' && 'Category Management'}
@@ -594,31 +623,12 @@ const Dashboard: React.FC = () => {
               </h1>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-10 pr-4 py-2 w-80 bg-input border border-border rounded-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                />
-              </div>
-              <Button variant="ghost" size="sm" className="text-foreground hover:bg-muted">
-                <Bell className="h-5 w-5" />
-              </Button>
-            </div>
+
           </div>
         </header>
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto bg-background p-6">
-          {currentSection === 'dashboard' && (
-            <div className="text-center py-20">
-              <h2 className="text-xl text-muted-foreground">Welcome to Admin Dashboard</h2>
-              <p className="text-muted-foreground mt-2">Select a section from the sidebar to get started</p>
-            </div>
-          )}
-
           {currentSection === 'products' && (
             <>
               {/* Products Header */}
@@ -673,9 +683,14 @@ const Dashboard: React.FC = () => {
                         <img
                           src={resolveImg(product.images?.[0])}
                           alt={product.name}
-                          className="w-full h-full object-cover"
-                          style={{ 
-                            boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)'
+                          className="w-full h-full max-w-full max-h-full object-cover"
+                          style={{
+                            boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+                            minHeight: '100%',
+                            maxHeight: '100%',
+                            minWidth: '100%',
+                            maxWidth: '100%',
+                            objectFit: 'cover'
                           }}
                         /> ); })()}
                         
@@ -876,7 +891,14 @@ const Dashboard: React.FC = () => {
                           <img
                             src={resolveImg(category.image)}
                             alt={category.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full max-w-full max-h-full object-cover"
+                            style={{
+                              minHeight: '100%',
+                              maxHeight: '100%',
+                              minWidth: '100%',
+                              maxWidth: '100%',
+                              objectFit: 'cover'
+                            }}
                           />); })()
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -985,13 +1007,7 @@ const Dashboard: React.FC = () => {
             </>
           )}
 
-          {currentSection === 'orders' && (
-            <div className="text-center py-20">
-              <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl text-muted-foreground">Orders Management</h2>
-              <p className="text-muted-foreground mt-2">Order management functionality coming soon</p>
-            </div>
-          )}
+          {currentSection === 'orders' && <OrderManagement />}
 
           {currentSection === 'customers' && (
             <div className="text-center py-20">
@@ -1001,16 +1017,18 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {currentSection === 'analytics' && (
-            <div className="text-center py-20">
-              <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl text-muted-foreground">Analytics Dashboard</h2>
-              <p className="text-muted-foreground mt-2">Analytics and reports coming soon</p>
-            </div>
-          )}
+          {currentSection === 'analytics' && <Analytics />}
+
+          {currentSection === 'bulk-email' && <BulkEmailSender />}
+
+          {currentSection === 'export' && <ExportReports />}
 
           {currentSection === 'category-management' && (
             <CategoryManagement />
+          )}
+
+          {currentSection === 'customers' && (
+            <CustomerManagement />
           )}
 
           {currentSection === 'settings' && (
