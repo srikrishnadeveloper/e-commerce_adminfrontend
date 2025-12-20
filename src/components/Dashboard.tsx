@@ -26,6 +26,7 @@ import {
   Mail,
   Download,
   LogOut,
+  CreditCard,
 } from 'lucide-react';
 import ProductModal from './modals/ProductModal';
 import CategoryModal from './modals/CategoryModal';
@@ -38,6 +39,7 @@ import OrderAnalytics from '../pages/OrderAnalytics';
 import Analytics from '../pages/Analytics';
 import BulkEmailSender from '../pages/BulkEmailSender';
 import ExportReports from '../pages/ExportReports';
+import PaymentManagement from '../pages/PaymentManagement';
 import SiteConfigPanel from './SiteConfigPanel';
 import type { Product, Category } from '../types';
 
@@ -210,16 +212,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     try {
       setIsLoading(true);
       
-      let response: Product;
+      let savedProduct: Product;
       
       if (updatedProduct._id) {
         // Update existing product
         const loadingToast = toast.loading('Updating product...');
-        response = await productsAPI.update(updatedProduct._id, updatedProduct);
+        const response = await productsAPI.update(updatedProduct._id, updatedProduct);
+        
+        // Extract the product data from the response
+        savedProduct = response.data || response;
         
         // Optimistic update - immediately update the UI
         setProducts(products.map(p => 
-          p._id === updatedProduct._id ? { ...response } : p
+          p._id === updatedProduct._id ? { ...savedProduct } : p
         ));
         
         toast.success('Product updated successfully!', { id: loadingToast });
@@ -227,10 +232,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         // Create new product
         const loadingToast = toast.loading('Creating product...');
         const { _id, ...productData } = updatedProduct;
-        response = await productsAPI.create(productData);
+        const response = await productsAPI.create(productData);
+        
+        // Extract the product data from the response
+        savedProduct = response.data || response;
         
         // Optimistic update - immediately add to UI
-        setProducts([response, ...products]);
+        setProducts([savedProduct, ...products]);
         
         toast.success('Product created successfully!', { id: loadingToast });
       }
@@ -239,7 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       setIsEditModalOpen(false);
       setEditingProduct(null);
       
-      // Optional: Reload data in background to ensure consistency
+      // Reload data in background to ensure consistency
       setTimeout(() => loadDashboardData(), 100);
       
     } catch (error: any) {
@@ -542,6 +550,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               Orders
             </button>
             <button
+              onClick={() => setCurrentSection('payments')}
+              className={`${currentSection === 'payments' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
+            >
+              <CreditCard className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
+              Payments
+            </button>
+            <button
               onClick={() => {
                 setCurrentSection('customers');
                 setCurrentPage(1);
@@ -617,6 +632,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 {currentSection === 'categories' && 'Categories'}
                 {currentSection === 'category-management' && 'Category Management'}
                 {currentSection === 'orders' && 'Orders'}
+                {currentSection === 'payments' && 'Payment Management'}
                 {currentSection === 'customers' && 'Customers'}
                 {currentSection === 'analytics' && 'Analytics'}
                 {currentSection === 'settings' && 'Settings'}
@@ -1008,6 +1024,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           )}
 
           {currentSection === 'orders' && <OrderManagement />}
+
+          {currentSection === 'payments' && <PaymentManagement />}
 
           {currentSection === 'customers' && (
             <div className="text-center py-20">

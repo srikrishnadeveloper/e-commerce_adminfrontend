@@ -79,12 +79,13 @@ export const productsAPI = {
     inStock?: boolean;
     search?: string;
   }) => {
-    const response = await api.get('/products', { params });
+    // Always include admin=true flag for admin dashboard to see all products
+    const response = await api.get('/products', { params: { ...params, admin: 'true' } });
     return response.data;
   },
   
   getById: async (id: string) => {
-    const response = await api.get(`/products/${id}`);
+    const response = await api.get(`/products/${id}`, { params: { admin: 'true' } });
     return response.data;
   },
   

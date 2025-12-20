@@ -237,10 +237,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   };
 
   const handleImageSelect = (imagePath: string) => {
-    if (!formData.images.includes(imagePath)) {
+    if (!(formData.images || []).includes(imagePath)) {
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, imagePath]
+        images: [...(prev.images || []), imagePath]
       }));
     }
   };
@@ -248,7 +248,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const removeImage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: (prev.images || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -265,7 +265,17 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           setJsonError('Missing required fields: name, description, and price are required');
           return;
         }
-        setFormData(parsed);
+        // Ensure all array fields are properly initialized
+        const normalizedData = {
+          ...parsed,
+          images: Array.isArray(parsed.images) ? parsed.images : [],
+          colors: Array.isArray(parsed.colors) ? parsed.colors : [],
+          sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
+          features: Array.isArray(parsed.features) ? parsed.features : [],
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+          specifications: parsed.specifications || {},
+        };
+        setFormData(normalizedData);
       } else {
         setJsonError('JSON must be an object');
       }
@@ -297,7 +307,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     const cleanedData = {
       ...formData,
       // Remove MongoDB-generated IDs from colors array
-      colors: formData.colors.map(color => ({
+      colors: (formData.colors || []).map(color => ({
         name: color.name || '',
         value: color.value || ''
       })).filter(color => color.name && color.value),
@@ -307,10 +317,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       rating: Number(formData.rating) || 0,
       reviews: Number(formData.reviews) || 0,
       // Remove any undefined or null values
-      images: formData.images.filter(img => img && img.trim()),
-      features: formData.features.filter(feature => feature && feature.trim()),
-      tags: formData.tags.filter(tag => tag && tag.trim()),
-      sizes: formData.sizes.filter(size => size && size.trim()),
+      images: (formData.images || []).filter(img => img && img.trim()),
+      features: (formData.features || []).filter(feature => feature && feature.trim()),
+      tags: (formData.tags || []).filter(tag => tag && tag.trim()),
+      sizes: (formData.sizes || []).filter(size => size && size.trim()),
       // Ensure specifications is an object
       specifications: formData.specifications || {},
     };
@@ -513,7 +523,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {formData.colors.map((color, index) => (
+                    {(formData.colors || []).map((color, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <Input
                           placeholder="Color name"
@@ -550,7 +560,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   <Input
                     id="sizes"
                     placeholder="S, M, L, XL"
-                    value={formData.sizes.join(', ')}
+                    value={(formData.sizes || []).join(', ')}
                     onChange={(e) => handleArrayChange('sizes', e.target.value)}
                   />
                 </div>
@@ -561,7 +571,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   <Textarea
                     id="features"
                     placeholder="Wireless charging, Water resistant, Fast charging"
-                    value={formData.features.join(', ')}
+                    value={(formData.features || []).join(', ')}
                     onChange={(e) => handleArrayChange('features', e.target.value)}
                     rows={3}
                   />
@@ -573,7 +583,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   <Input
                     id="tags"
                     placeholder="electronics, accessories, wireless"
-                    value={formData.tags.join(', ')}
+                    value={(formData.tags || []).join(', ')}
                     onChange={(e) => handleArrayChange('tags', e.target.value)}
                   />
                 </div>
@@ -621,9 +631,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
               <div className="space-y-4">
                 {/* Selected Images */}
                 <div>
-                  <Label>Selected Images ({formData.images.length})</Label>
+                  <Label>Selected Images ({(formData.images || []).length})</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                    {formData.images.map((imagePath, index) => (
+                    {(formData.images || []).map((imagePath, index) => (
                       <div key={index} className="relative group">
                         <img
                           src={`http://localhost:5001${imagePath}`}
@@ -718,7 +728,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                           src={`http://localhost:5001${image.path}`}
                           alt={image.name}
                           className={`w-full h-16 max-w-full max-h-16 object-cover rounded border-2 transition-all ${
-                            formData.images.includes(image.path)
+                            (formData.images || []).includes(image.path)
                               ? 'border-blue-500 opacity-50'
                               : 'border-gray-300 hover:border-blue-300'
                           }`}
@@ -734,7 +744,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                         <div className="text-xs text-gray-500 mt-1 truncate">
                           {image.name}
                         </div>
-                        {formData.images.includes(image.path) && (
+                        {(formData.images || []).includes(image.path) && (
                           <div className="absolute inset-0 flex items-center justify-center bg-blue-500 bg-opacity-20 rounded">
                             <div className="bg-blue-500 text-white rounded-full p-1">
                               ✓

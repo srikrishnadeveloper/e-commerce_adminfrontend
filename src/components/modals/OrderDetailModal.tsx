@@ -37,6 +37,8 @@ interface Order {
     price: number;
     quantity: number;
     itemTotal: number;
+    selectedColor?: string;
+    selectedSize?: string;
   }>;
   subtotal: number;
   shipping: number;
@@ -538,6 +540,13 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             <p className="text-sm text-muted-foreground">
                               Quantity: {item.quantity || 0} × {formatPrice(item.price || 0)}
                             </p>
+                            {(item.selectedColor || item.selectedSize) && (
+                              <p className="text-sm text-muted-foreground">
+                                {item.selectedColor && <span>Color: {item.selectedColor}</span>}
+                                {item.selectedColor && item.selectedSize && <span> • </span>}
+                                {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <p className="font-semibold text-foreground">{formatPrice(item.itemTotal || 0)}</p>

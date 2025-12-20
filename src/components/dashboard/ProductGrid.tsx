@@ -12,8 +12,8 @@ interface ProductGridProps {
 }
 
 const resolveImg = (p?: string) => {
-  if (!p) return 'http://localhost:5000/api/images/placeholder.svg';
-  return p.startsWith('http') ? p : `http://localhost:5000/api${p}`;
+  if (!p) return 'http://localhost:5001/api/images/placeholder.svg';
+  return p.startsWith('http') ? p : `http://localhost:5001/api${p}`;
 };
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, onView, onEdit, onDelete, formatPrice }) => {

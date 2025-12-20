@@ -203,6 +203,7 @@ const Analytics: React.FC = () => {
               className="w-4 h-4 rounded"
             />
             <span className="text-sm text-gray-300">Auto Refresh</span>
+            
           </label>
 
           {/* Refresh Button */}
