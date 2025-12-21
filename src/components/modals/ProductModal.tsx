@@ -56,7 +56,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
   const [rawJsonData, setRawJsonData] = useState('');
   const [jsonError, setJsonError] = useState('');
-  const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'images' | 'shipping' | 'json'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'images' | 'json'>('basic');
 
   useEffect(() => {
     setFormData(
@@ -348,7 +348,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             { key: 'basic', label: 'Basic Info', icon: null },
             { key: 'advanced', label: 'Advanced', icon: null },
             { key: 'images', label: 'Images', icon: ImageIcon },
-            { key: 'shipping', label: 'Shipping', icon: null },
             { key: 'json', label: 'Raw JSON', icon: Code }
           ].map(tab => (
             <button
@@ -754,145 +753,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                       </div>
                       ))
                     )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Shipping Tab */}
-            {activeTab === 'shipping' && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Standard Shipping */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Standard Shipping</h3>
-                    <div className="space-y-2">
-                      <Label>Delivery Time</Label>
-                      <Input
-                        value={formData.shipping?.standard?.days || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            standard: { ...prev.shipping!.standard, days: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., 5-7 business days"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Price</Label>
-                      <Input
-                        value={formData.shipping?.standard?.price || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            standard: { ...prev.shipping!.standard, price: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., FREE on orders over $50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Express Shipping */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Express Shipping</h3>
-                    <div className="space-y-2">
-                      <Label>Delivery Time</Label>
-                      <Input
-                        value={formData.shipping?.express?.days || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            express: { ...prev.shipping!.express, days: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., 2-3 business days"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Price</Label>
-                      <Input
-                        value={formData.shipping?.express?.price || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            express: { ...prev.shipping!.express, price: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., $9.99"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Overnight Shipping */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Overnight Shipping</h3>
-                    <div className="space-y-2">
-                      <Label>Delivery Time</Label>
-                      <Input
-                        value={formData.shipping?.overnight?.days || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            overnight: { ...prev.shipping!.overnight, days: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., 1 business day"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Price</Label>
-                      <Input
-                        value={formData.shipping?.overnight?.price || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            overnight: { ...prev.shipping!.overnight, price: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., $19.99"
-                      />
-                    </div>
-                  </div>
-
-                  {/* International Shipping */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">International Shipping</h3>
-                    <div className="space-y-2">
-                      <Label>Delivery Time</Label>
-                      <Input
-                        value={formData.shipping?.international?.days || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            international: { ...prev.shipping!.international, days: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., 12-25 business days depending on location"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Processing Time</Label>
-                      <Input
-                        value={formData.shipping?.international?.processing || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          shipping: {
-                            ...prev.shipping!,
-                            international: { ...prev.shipping!.international, processing: e.target.value }
-                          }
-                        }))}
-                        placeholder="e.g., Orders are processed within 1-2 business days"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
