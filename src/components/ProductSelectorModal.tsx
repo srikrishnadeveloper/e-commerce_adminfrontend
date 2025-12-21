@@ -145,10 +145,10 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
                     
                     <h3 className="font-medium text-sm mb-2 line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold">${product.price}</span>
+                      <span className="font-semibold">₹{product.price}</span>
                       {hasDiscount && (
                         <span className="text-gray-500 line-through text-sm">
-                          ${product.originalPrice}
+                          ₹{product.originalPrice}
                         </span>
                       )}
                     </div>

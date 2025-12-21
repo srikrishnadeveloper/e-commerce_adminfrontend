@@ -1,6 +1,15 @@
 export interface Color {
   name: string;
   value: string;
+  images?: string[]; // Array of image URLs for this color variant
+}
+
+export interface SizeVariant {
+  size: string;
+  price: number;
+  originalPrice?: number;
+  inStock: boolean;
+  stockQuantity?: number;
 }
 
 export interface ProductVariant {
@@ -73,6 +82,7 @@ export interface Product {
   images: string[];
   colors: Color[];
   sizes: string[];
+  sizeVariants: SizeVariant[];
   features: string[];
   specifications: Specifications;
   tags: string[];

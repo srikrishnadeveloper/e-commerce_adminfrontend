@@ -69,9 +69,9 @@ const OrderAnalytics: React.FC = () => {
 
   // Format currency
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(price);
   };
 
@@ -311,7 +311,7 @@ const OrderAnalytics: React.FC = () => {
                   <td className="py-3 px-4 text-sm text-foreground">{day.orders}</td>
                   <td className="py-3 px-4 text-sm text-foreground">{formatPrice(day.revenue)}</td>
                   <td className="py-3 px-4 text-sm text-foreground">
-                    {day.orders > 0 ? formatPrice(day.revenue / day.orders) : '$0.00'}
+                    {day.orders > 0 ? formatPrice(day.revenue / day.orders) : '₹0.00'}
                   </td>
                 </tr>
               ))}

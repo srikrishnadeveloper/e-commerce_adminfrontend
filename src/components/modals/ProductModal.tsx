@@ -35,23 +35,19 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       images: [],
       colors: [],
       sizes: [],
+      sizeVariants: [],
       features: [],
       specifications: {},
       tags: [],
       stockQuantity: 0,
       trackInventory: true,
-      shipping: {
-        standard: { days: "5-7 business days", price: "FREE on orders over ₹500" },
-        express: { days: "2-3 business days", price: "₹99" },
-        overnight: { days: "1 business day", price: "₹199" },
-        international: { days: "12-25 business days depending on location", processing: "Orders are processed within 1-2 business days" }
-      },
     }
   );
 
   const [availableImages, setAvailableImages] = useState<ImageFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [draggedImage, setDraggedImage] = useState<{ colorIndex: number; imageIndex: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [rawJsonData, setRawJsonData] = useState('');
@@ -76,6 +72,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         images: [],
         colors: [],
         sizes: [],
+        sizeVariants: [],
         features: [],
         specifications: {},
         tags: [],
@@ -202,10 +199,55 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     setFormData((prev) => ({ ...prev, colors: newColors }));
   };
 
+  const handleColorImagesChange = (colorIndex: number, images: string[]) => {
+    const newColors = [...formData.colors];
+    (newColors[colorIndex] as any).images = images;
+    setFormData((prev) => ({ ...prev, colors: newColors }));
+  };
+
+  const addImageToColor = (colorIndex: number, imagePath: string) => {
+    const newColors = [...formData.colors];
+    const currentImages = (newColors[colorIndex] as any).images || [];
+    if (!currentImages.includes(imagePath)) {
+      (newColors[colorIndex] as any).images = [...currentImages, imagePath];
+      setFormData((prev) => ({ ...prev, colors: newColors }));
+    }
+  };
+
+  const removeImageFromColor = (colorIndex: number, imageIndex: number) => {
+    const newColors = [...formData.colors];
+    const currentImages = (newColors[colorIndex] as any).images || [];
+    (newColors[colorIndex] as any).images = currentImages.filter((_: any, i: number) => i !== imageIndex);
+    setFormData((prev) => ({ ...prev, colors: newColors }));
+  };
+
+  const handleDragStartColorImage = (colorIndex: number, imageIndex: number) => {
+    setDraggedImage({ colorIndex, imageIndex });
+  };
+
+  const handleDragOverColorImage = (e: React.DragEvent, colorIndex: number, targetIndex: number) => {
+    e.preventDefault();
+    if (!draggedImage || draggedImage.colorIndex !== colorIndex) return;
+    
+    if (draggedImage.imageIndex !== targetIndex) {
+      const newColors = [...formData.colors];
+      const images = [...((newColors[colorIndex] as any).images || [])];
+      const [removed] = images.splice(draggedImage.imageIndex, 1);
+      images.splice(targetIndex, 0, removed);
+      (newColors[colorIndex] as any).images = images;
+      setFormData((prev) => ({ ...prev, colors: newColors }));
+      setDraggedImage({ colorIndex, imageIndex: targetIndex });
+    }
+  };
+
+  const handleDragEndColorImage = () => {
+    setDraggedImage(null);
+  };
+
   const addColor = () => {
     setFormData((prev) => ({
       ...prev,
-      colors: [...prev.colors, { name: '', value: '' }]
+      colors: [...prev.colors, { name: '', value: '', images: [] }]
     }));
   };
 
@@ -213,6 +255,33 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     setFormData((prev) => ({
       ...prev,
       colors: prev.colors.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Size Variant Handlers
+  const handleSizeVariantChange = (index: number, field: string, value: any) => {
+    const newSizeVariants = [...(formData.sizeVariants || [])];
+    newSizeVariants[index] = { ...newSizeVariants[index], [field]: value };
+    setFormData((prev) => ({ ...prev, sizeVariants: newSizeVariants }));
+  };
+
+  const addSizeVariant = () => {
+    setFormData((prev) => ({
+      ...prev,
+      sizeVariants: [...(prev.sizeVariants || []), { 
+        size: '', 
+        price: prev.price || 0, 
+        originalPrice: prev.originalPrice || 0, 
+        inStock: true, 
+        stockQuantity: 0 
+      }]
+    }));
+  };
+
+  const removeSizeVariant = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizeVariants: (prev.sizeVariants || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -306,11 +375,20 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     // Clean the data before sending
     const cleanedData = {
       ...formData,
-      // Remove MongoDB-generated IDs from colors array
+      // Remove MongoDB-generated IDs from colors array, include images array
       colors: (formData.colors || []).map(color => ({
         name: color.name || '',
-        value: color.value || ''
+        value: color.value || '',
+        images: ((color as any).images || []).filter((img: string) => img && img.trim())
       })).filter(color => color.name && color.value),
+      // Clean size variants with proper number types
+      sizeVariants: (formData.sizeVariants || []).map(variant => ({
+        size: variant.size || '',
+        price: Number(variant.price) || 0,
+        originalPrice: Number(variant.originalPrice) || 0,
+        inStock: variant.inStock !== false,
+        stockQuantity: Number(variant.stockQuantity) || 0
+      })).filter(variant => variant.size),
       // Ensure required fields are present and properly typed
       price: Number(formData.price) || 0,
       originalPrice: Number(formData.originalPrice) || 0,
@@ -333,9 +411,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col">
+      <div className="bg-white dark:bg-gray-800 flex-1 overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center px-8 py-5 border-b bg-gray-50 dark:bg-gray-900">
           <h2 className="text-2xl font-bold">{product ? 'Edit Product' : 'Create Product'}</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-6 w-6" />
@@ -343,7 +421,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-4 border-b overflow-x-auto">
+        <div className="flex space-x-1 px-8 pt-4 border-b overflow-x-auto bg-white dark:bg-gray-800">
           {[
             { key: 'basic', label: 'Basic Info', icon: null },
             { key: 'advanced', label: 'Advanced', icon: null },
@@ -354,9 +432,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2 rounded-t-lg flex items-center space-x-2 ${
+              className={`px-6 py-3 rounded-t-lg flex items-center space-x-2 font-medium transition-colors ${
                 activeTab === tab.key
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
@@ -367,7 +445,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-4">
+          <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
             {/* Basic Info Tab */}
             {activeTab === 'basic' && (
               <div className="space-y-4">
@@ -511,57 +589,259 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
             {/* Advanced Tab */}
             {activeTab === 'advanced' && (
-              <div className="space-y-6">
-                {/* Colors */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Colors</Label>
-                    <Button type="button" onClick={addColor} size="sm" variant="outline">
+              <div className="space-y-8">
+                {/* Color Variants with Images */}
+                <div className="border rounded-xl p-5 bg-gray-50 dark:bg-gray-900">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">Color Variants</h3>
+                      <p className="text-sm text-gray-500 mt-1">Click images to select/deselect • Drag selected images to reorder</p>
+                    </div>
+                    <Button type="button" onClick={addColor} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Color
                     </Button>
                   </div>
-                  <div className="space-y-2">
-                    {(formData.colors || []).map((color, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <Input
-                          placeholder="Color name"
-                          value={color.name}
-                          onChange={(e) => handleColorChange(index, 'name', e.target.value)}
-                          className="flex-1"
-                        />
-                        <Input
-                          placeholder="Color value (#hex)"
-                          value={color.value}
-                          onChange={(e) => handleColorChange(index, 'value', e.target.value)}
-                          className="flex-1"
-                        />
-                        <div
-                          className="w-8 h-8 rounded border"
-                          style={{ backgroundColor: color.value }}
-                        />
+                  
+                  {(formData.colors || []).length > 0 ? (
+                    <div className="space-y-6">
+                      {(formData.colors || []).map((color, colorIndex) => (
+                        <div key={colorIndex} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                          {/* Color Header */}
+                          <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-b">
+                            <div
+                              className="w-14 h-14 rounded-xl border-2 border-white shadow-lg flex-shrink-0"
+                              style={{ backgroundColor: color.value || '#cccccc' }}
+                            />
+                            <div className="flex-1 grid grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Color Name</Label>
+                                <Input
+                                  placeholder="e.g., Navy Blue"
+                                  value={color.name}
+                                  onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)}
+                                  className="h-10 text-base"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Hex Code</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="#000000"
+                                    value={color.value}
+                                    onChange={(e) => handleColorChange(colorIndex, 'value', e.target.value)}
+                                    className="h-10 flex-1 font-mono text-base"
+                                  />
+                                  <input
+                                    type="color"
+                                    value={color.value || '#000000'}
+                                    onChange={(e) => handleColorChange(colorIndex, 'value', e.target.value)}
+                                    className="w-10 h-10 rounded-lg cursor-pointer border-2 border-gray-200"
+                                    title="Pick color"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              onClick={() => removeColor(colorIndex)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10 w-10 p-0"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          </div>
+                          
+                          
+                          {/* Images for this color - Combined view */}
+                          <div className="p-5">
+                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 block">
+                              Images for <span className="text-blue-600">{color.name || 'this color'}</span>
+                              <span className="text-gray-400 font-normal ml-2">
+                                ({((color as any).images || []).length} selected)
+                              </span>
+                              {((color as any).images || []).length > 1 && (
+                                <span className="text-blue-500 font-normal ml-2">• Drag selected images to reorder</span>
+                              )}
+                            </Label>
+                            
+                            {(formData.images || []).length > 0 ? (
+                              <div className="grid grid-cols-8 gap-2">
+                                {/* First show selected images in order - draggable */}
+                                {((color as any).images || []).map((imgPath: string, imgIdx: number) => (
+                                  <div
+                                    key={`selected-${imgPath}`}
+                                    draggable
+                                    onDragStart={() => handleDragStartColorImage(colorIndex, imgIdx)}
+                                    onDragOver={(e) => handleDragOverColorImage(e, colorIndex, imgIdx)}
+                                    onDragEnd={handleDragEndColorImage}
+                                    onClick={() => removeImageFromColor(colorIndex, imgIdx)}
+                                    className={`relative cursor-grab active:cursor-grabbing rounded-lg overflow-hidden transition-all duration-150 ${
+                                      imgIdx === 0 
+                                        ? 'ring-2 ring-blue-500 ring-offset-2' 
+                                        : 'ring-2 ring-green-500 ring-offset-1'
+                                    } ${draggedImage?.colorIndex === colorIndex && draggedImage?.imageIndex === imgIdx ? 'opacity-50 scale-90' : ''}`}
+                                    title="Drag to reorder • Click to remove"
+                                  >
+                                    <img
+                                      src={`http://localhost:5001${imgPath}`}
+                                      alt={`${color.name} image ${imgIdx + 1}`}
+                                      className="w-full aspect-square object-cover"
+                                    />
+                                    <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded font-bold">
+                                      {imgIdx + 1}
+                                    </div>
+                                    {imgIdx === 0 && (
+                                      <div className="absolute bottom-0 left-0 right-0 bg-blue-600 text-white text-xs py-0.5 text-center font-medium">
+                                        Main
+                                      </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-blue-500/30 flex items-center justify-center">
+                                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow">
+                                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                                
+                                {/* Then show unselected images */}
+                                {(formData.images || []).filter(img => !((color as any).images || []).includes(img)).map((img, imgIdx) => (
+                                  <div
+                                    key={`unselected-${imgIdx}`}
+                                    onClick={() => addImageToColor(colorIndex, img)}
+                                    className="relative cursor-pointer rounded-lg overflow-hidden transition-all duration-150 border-2 border-gray-200 hover:border-blue-400 hover:shadow-md hover:scale-105"
+                                    title="Click to select"
+                                  >
+                                    <img
+                                      src={`http://localhost:5001${img}`}
+                                      alt={`Available image ${imgIdx + 1}`}
+                                      className="w-full aspect-square object-cover"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 bg-gray-100 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300">
+                                <ImageIcon className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                                <p className="text-sm text-gray-500 font-medium">No product images available</p>
+                                <p className="text-xs text-gray-400">Go to Images tab to upload images first</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Plus className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-600 font-semibold text-lg">No color variants yet</p>
+                      <p className="text-sm text-gray-400 mb-5">Add colors to let customers choose product variations</p>
+                      <Button type="button" onClick={addColor} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add First Color
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Size Variants with Prices */}
+                <div className="border rounded-xl p-5 bg-gray-50 dark:bg-gray-900">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">Size Variants</h3>
+                      <p className="text-sm text-gray-500 mt-1">Set different prices for each size. Leave empty to use default price.</p>
+                    </div>
+                    <Button type="button" onClick={addSizeVariant} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Size
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {(formData.sizeVariants || []).map((variant, index) => (
+                      <div key={index} className="flex items-start space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                        <div className="flex-1 grid grid-cols-5 gap-4">
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Size</Label>
+                            <Input
+                              placeholder="S, M, L..."
+                              value={variant.size}
+                              onChange={(e) => handleSizeVariantChange(index, 'size', e.target.value)}
+                              className="h-10"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Price (₹)</Label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={variant.price}
+                              onChange={(e) => handleSizeVariantChange(index, 'price', parseFloat(e.target.value) || 0)}
+                              className="h-10"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Original Price</Label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={variant.originalPrice}
+                              onChange={(e) => handleSizeVariantChange(index, 'originalPrice', parseFloat(e.target.value) || 0)}
+                              className="h-10"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Stock Qty</Label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={variant.stockQuantity}
+                              onChange={(e) => handleSizeVariantChange(index, 'stockQuantity', parseInt(e.target.value) || 0)}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-end pb-1">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`sizeInStock-${index}`}
+                                checked={variant.inStock !== false}
+                                onCheckedChange={(checked) => handleSizeVariantChange(index, 'inStock', checked)}
+                              />
+                              <Label htmlFor={`sizeInStock-${index}`} className="text-xs">In Stock</Label>
+                            </div>
+                          </div>
+                        </div>
                         <Button
                           type="button"
-                          onClick={() => removeColor(index)}
+                          onClick={() => removeSizeVariant(index)}
                           size="sm"
                           variant="destructive"
+                          className="mt-5"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
+                    {(formData.sizeVariants || []).length === 0 && (
+                      <p className="text-sm text-gray-400 text-center py-4">No size variants. Product will use the default price for all sizes.</p>
+                    )}
                   </div>
                 </div>
 
-                {/* Sizes */}
+                {/* Simple Sizes (fallback) */}
                 <div>
-                  <Label htmlFor="sizes">Sizes (comma-separated)</Label>
+                  <Label htmlFor="sizes">Simple Sizes (comma-separated, used if no Size Variants)</Label>
                   <Input
                     id="sizes"
                     placeholder="S, M, L, XL"
                     value={(formData.sizes || []).join(', ')}
                     onChange={(e) => handleArrayChange('sizes', e.target.value)}
                   />
+                  <p className="text-xs text-gray-500 mt-1">Use this for simple size options without price variations</p>
                 </div>
 
                 {/* Features */}
@@ -627,66 +907,64 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
             {/* Images Tab */}
             {activeTab === 'images' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Selected Images */}
-                <div>
-                  <Label>Selected Images ({(formData.images || []).length})</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                    {(formData.images || []).map((imagePath, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={`http://localhost:5001${imagePath}`}
-                          alt={`Product image ${index + 1}`}
-                          className="w-full h-24 max-w-full max-h-24 object-cover rounded border"
-                          style={{
-                            minHeight: '96px',
-                            maxHeight: '96px',
-                            minWidth: '100%',
-                            maxWidth: '100%',
-                            objectFit: 'cover'
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          size="sm"
-                          variant="destructive"
-                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                        <div className="text-xs text-gray-500 mt-1 truncate">
-                          {imagePath.split('/').pop()}
+                {(formData.images || []).length > 0 && (
+                  <div>
+                    <Label className="text-base font-semibold mb-3 block">
+                      Selected Images ({(formData.images || []).length})
+                    </Label>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+                      {(formData.images || []).map((imagePath, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square rounded-lg overflow-hidden border-2 border-blue-500 bg-gray-100">
+                            <img
+                              src={`http://localhost:5001${imagePath}`}
+                              alt={`Product ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
+                          >
+                            ×
+                          </button>
+                          <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                            {index + 1}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Upload Section */}
+                {/* Upload Area */}
                 <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                    dragOver ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <CloudUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">
-                    {dragOver ? 'Drop images here' : 'Drag and drop images here, or click to select'}
+                  <CloudUpload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    Drag & drop images here
                   </p>
                   <Button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="mb-2"
+                    variant="outline"
+                    size="sm"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     {uploading ? 'Uploading...' : 'Select Images'}
                   </Button>
-                  <p className="text-xs text-gray-500">
-                    Supports PNG, JPG, JPEG, GIF, WebP, SVG (max 10MB each, 10 files max)
+                  <p className="text-xs text-gray-400 mt-3">
+                    PNG, JPG, JPEG, GIF, WebP, SVG • Max 10MB
                   </p>
                   <input
                     ref={fileInputRef}
@@ -699,62 +977,46 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                 </div>
 
                 {/* Available Images */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Available Images ({availableImages.length})</Label>
-                    <Button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add More
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-2 max-h-64 overflow-y-auto border rounded p-2">
-                    {availableImages.length === 0 ? (
-                      <div className="col-span-full text-center py-8 text-gray-500">
-                        <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p>No images available</p>
-                        <p className="text-xs">Upload some images to get started</p>
-                      </div>
-                    ) : (
-                      availableImages.map((image, index) => (
-                      <div key={index} className="relative group cursor-pointer">
-                        <img
-                          src={`http://localhost:5001${image.path}`}
-                          alt={image.name}
-                          className={`w-full h-16 max-w-full max-h-16 object-cover rounded border-2 transition-all ${
-                            (formData.images || []).includes(image.path)
-                              ? 'border-blue-500 opacity-50'
-                              : 'border-gray-300 hover:border-blue-300'
-                          }`}
-                          style={{
-                            minHeight: '64px',
-                            maxHeight: '64px',
-                            minWidth: '100%',
-                            maxWidth: '100%',
-                            objectFit: 'cover'
-                          }}
-                          onClick={() => handleImageSelect(image.path)}
-                        />
-                        <div className="text-xs text-gray-500 mt-1 truncate">
-                          {image.name}
-                        </div>
-                        {(formData.images || []).includes(image.path) && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-blue-500 bg-opacity-20 rounded">
-                            <div className="bg-blue-500 text-white rounded-full p-1">
-                              ✓
+                {availableImages.length > 0 && (
+                  <div>
+                    <Label className="text-base font-semibold mb-3 block">
+                      Available Images ({availableImages.length}) — Click to add
+                    </Label>
+                    <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                      {availableImages.map((image, index) => {
+                        const isSelected = (formData.images || []).includes(image.path);
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => handleImageSelect(image.path)}
+                            className={`relative cursor-pointer rounded-lg overflow-hidden transition-all ${
+                              isSelected
+                                ? 'ring-2 ring-blue-500 opacity-50'
+                                : 'hover:ring-2 hover:ring-blue-300'
+                            }`}
+                          >
+                            <div className="aspect-square bg-gray-200">
+                              <img
+                                src={`http://localhost:5001${image.path}`}
+                                alt={image.name}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
+                            {isSelected && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-blue-500/30">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      ))
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -797,11 +1059,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end space-x-2 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex justify-end space-x-3 px-8 py-5 border-t bg-gray-50 dark:bg-gray-900">
+            <Button type="button" variant="outline" onClick={onClose} className="px-6">
               Cancel
             </Button>
-            <Button type="submit" disabled={activeTab === 'json' && !!jsonError}>
+            <Button type="submit" disabled={activeTab === 'json' && !!jsonError} className="px-6 bg-blue-600 hover:bg-blue-700">
               {product ? 'Update Product' : 'Create Product'}
             </Button>
           </div>

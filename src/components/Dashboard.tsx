@@ -27,6 +27,7 @@ import {
   Download,
   LogOut,
   CreditCard,
+  Image,
 } from 'lucide-react';
 import ProductModal from './modals/ProductModal';
 import CategoryModal from './modals/CategoryModal';
@@ -40,6 +41,7 @@ import Analytics from '../pages/Analytics';
 import BulkEmailSender from '../pages/BulkEmailSender';
 import ExportReports from '../pages/ExportReports';
 import PaymentManagement from '../pages/PaymentManagement';
+import ImageManagement from '../pages/ImageManagement';
 import SiteConfigPanel from './SiteConfigPanel';
 import type { Product, Category } from '../types';
 
@@ -228,6 +230,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         ));
         
         toast.success('Product updated successfully!', { id: loadingToast });
+        
+        // Keep modal open after update, just refresh the editing product data
+        setEditingProduct(savedProduct);
       } else {
         // Create new product
         const loadingToast = toast.loading('Creating product...');
@@ -241,11 +246,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setProducts([savedProduct, ...products]);
         
         toast.success('Product created successfully!', { id: loadingToast });
+        
+        // Close modal only after creating a new product
+        setIsEditModalOpen(false);
+        setEditingProduct(null);
       }
-      
-      // Close the modal immediately for better UX
-      setIsEditModalOpen(false);
-      setEditingProduct(null);
       
       // Reload data in background to ensure consistency
       setTimeout(() => loadDashboardData(), 100);
@@ -543,6 +548,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               Category Management
             </button>
             <button
+              onClick={() => setCurrentSection('images')}
+              className={`${currentSection === 'images' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
+            >
+              <Image className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
+              Images
+            </button>
+            <button
               onClick={() => setCurrentSection('orders')}
               className={`${currentSection === 'orders' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
             >
@@ -631,6 +643,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 {currentSection === 'products' && 'Products'}
                 {currentSection === 'categories' && 'Categories'}
                 {currentSection === 'category-management' && 'Category Management'}
+                {currentSection === 'images' && 'Image Management'}
                 {currentSection === 'orders' && 'Orders'}
                 {currentSection === 'payments' && 'Payment Management'}
                 {currentSection === 'customers' && 'Customers'}
@@ -1043,6 +1056,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
           {currentSection === 'category-management' && (
             <CategoryManagement />
+          )}
+
+          {currentSection === 'images' && (
+            <ImageManagement />
           )}
 
           {currentSection === 'customers' && (

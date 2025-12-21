@@ -89,7 +89,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
               <span className="text-sm text-gray-600">{entry.dataKey}:</span>
               <span className="text-sm font-medium">
                 {entry.dataKey === 'revenue' || entry.dataKey === 'averageOrderValue' 
-                  ? `$${entry.value.toFixed(2)}` 
+                  ? `₹${entry.value.toFixed(2)}` 
                   : entry.value.toLocaleString()}
               </span>
             </div>
@@ -103,11 +103,11 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
   // Format Y-axis values
   const formatYAxis = (value: number) => {
     if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
+      return `₹${(value / 1000000).toFixed(1)}M`;
     } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
+      return `₹${(value / 1000).toFixed(1)}K`;
     }
-    return `$${value}`;
+    return `₹${value}`;
   };
 
   const commonProps = {

@@ -323,7 +323,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         },
         body: JSON.stringify({
           paymentStatus: 'refunded',
-          notes: `Refund processed: $${parseFloat(refundAmount).toFixed(2)}. Reason: ${refundReason || 'Not specified'}`
+          notes: `Refund processed: ₹${parseFloat(refundAmount).toFixed(2)}. Reason: ${refundReason || 'Not specified'}`
         })
       });
 
@@ -336,7 +336,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            note: `Refund processed: $${parseFloat(refundAmount).toFixed(2)}. Reason: ${refundReason || 'Not specified'}`,
+            note: `Refund processed: ₹${parseFloat(refundAmount).toFixed(2)}. Reason: ${refundReason || 'Not specified'}`,
             type: 'internal'
           })
         });
@@ -873,7 +873,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1">Refund Amount *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₹</span>
                   <input
                     type="number"
                     step="0.01"
