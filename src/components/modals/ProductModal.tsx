@@ -174,11 +174,39 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
   if (!isOpen) return null;
 
+  // Helper function to display number values - show empty string for 0 to allow easier typing
+  const displayNumber = (value: number | undefined, allowZero: boolean = false): string => {
+    if (value === undefined || value === null) return '';
+    if (value === 0 && !allowZero) return '';
+    return String(value);
+  };
+
+  // Better number change handler that handles empty input and leading zeros
+  const handleNumberChange = (name: string, value: string, min?: number, max?: number) => {
+    // Allow empty input (will be treated as 0 on save)
+    if (value === '' || value === '-') {
+      setFormData((prev) => ({ ...prev, [name]: 0 }));
+      return;
+    }
+    
+    // Parse the number
+    let numValue = parseFloat(value);
+    
+    // If not a valid number, don't update
+    if (isNaN(numValue)) return;
+    
+    // Apply min/max constraints
+    if (min !== undefined && numValue < min) numValue = min;
+    if (max !== undefined && numValue > max) numValue = max;
+    
+    setFormData((prev) => ({ ...prev, [name]: numValue }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
 
     if (type === 'number') {
-      setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
+      handleNumberChange(name, value);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -513,8 +541,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                       name="price"
                       type="number"
                       step="0.01"
-                      value={formData.price}
-                      onChange={handleChange}
+                      min="0"
+                      value={displayNumber(formData.price)}
+                      onChange={(e) => handleNumberChange('price', e.target.value, 0)}
+                      placeholder="Enter price"
                       required
                     />
                   </div>
@@ -525,8 +555,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                       name="originalPrice"
                       type="number"
                       step="0.01"
-                      value={formData.originalPrice}
-                      onChange={handleChange}
+                      min="0"
+                      value={displayNumber(formData.originalPrice)}
+                      onChange={(e) => handleNumberChange('originalPrice', e.target.value, 0)}
+                      placeholder="Enter original price"
                     />
                   </div>
                 </div>
@@ -541,8 +573,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                       min="0"
                       max="5"
                       step="0.1"
-                      value={formData.rating}
-                      onChange={handleChange}
+                      value={displayNumber(formData.rating, true)}
+                      onChange={(e) => handleNumberChange('rating', e.target.value, 0, 5)}
+                      placeholder="0"
                     />
                   </div>
                   <div>
@@ -552,8 +585,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                       name="reviews"
                       type="number"
                       min="0"
-                      value={formData.reviews}
-                      onChange={handleChange}
+                      value={displayNumber(formData.reviews, true)}
+                      onChange={(e) => handleNumberChange('reviews', e.target.value, 0)}
+                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -778,9 +812,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                             <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Price (₹)</Label>
                             <Input
                               type="number"
-                              placeholder="0"
-                              value={variant.price}
-                              onChange={(e) => handleSizeVariantChange(index, 'price', parseFloat(e.target.value) || 0)}
+                              min="0"
+                              step="0.01"
+                              placeholder="Enter price"
+                              value={variant.price || ''}
+                              onChange={(e) => handleSizeVariantChange(index, 'price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                               className="h-10"
                             />
                           </div>
@@ -788,9 +824,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                             <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Original Price</Label>
                             <Input
                               type="number"
-                              placeholder="0"
-                              value={variant.originalPrice}
-                              onChange={(e) => handleSizeVariantChange(index, 'originalPrice', parseFloat(e.target.value) || 0)}
+                              min="0"
+                              step="0.01"
+                              placeholder="Enter price"
+                              value={variant.originalPrice || ''}
+                              onChange={(e) => handleSizeVariantChange(index, 'originalPrice', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                               className="h-10"
                             />
                           </div>
@@ -798,9 +836,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                             <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Stock Qty</Label>
                             <Input
                               type="number"
-                              placeholder="0"
-                              value={variant.stockQuantity}
-                              onChange={(e) => handleSizeVariantChange(index, 'stockQuantity', parseInt(e.target.value) || 0)}
+                              min="0"
+                              placeholder="Enter qty"
+                              value={variant.stockQuantity || ''}
+                              onChange={(e) => handleSizeVariantChange(index, 'stockQuantity', e.target.value === '' ? 0 : parseInt(e.target.value))}
                               className="h-10"
                             />
                           </div>
@@ -982,7 +1021,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                     <Label className="text-base font-semibold mb-3 block">
                       Available Images ({availableImages.length}) — Click to add
                     </Label>
-                    <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 max-h-96 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
                       {availableImages.map((image, index) => {
                         const isSelected = (formData.images || []).includes(image.path);
                         return (

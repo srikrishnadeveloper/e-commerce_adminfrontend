@@ -184,59 +184,6 @@ const AnnouncementTab: React.FC<AnnouncementTabProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Enhanced Preview Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-foreground">Live Preview</h4>
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span>Real-time preview</span>
-          </div>
-        </div>
-
-        {config.announcementbar?.enabled && currentAnnouncements.length > 0 ? (
-          <div className="space-y-2">
-            <div
-              className="h-12 flex items-center text-center text-sm rounded-lg overflow-hidden relative border-2 border-dashed border-gray-300"
-              style={{
-                backgroundColor: config.announcementbar?.backgroundColor || '#2c3bc5',
-                color: config.announcementbar?.textColor || '#ffffff'
-              }}
-            >
-              <div
-                className="animate-scroll-left flex items-center whitespace-nowrap px-4"
-                style={{
-                  animationDuration: `${Math.max(20, currentAnnouncements.length * 4)}s`
-                }}
-              >
-                {currentAnnouncements.filter(a => a.trim()).map((announcement, index) => (
-                  <span key={`preview-${index}`} className="text-sm font-medium px-8">
-                    {announcement || 'Announcement text will appear here'}
-                  </span>
-                ))}
-                {/* Duplicate for seamless loop */}
-                {currentAnnouncements.filter(a => a.trim()).map((announcement, index) => (
-                  <span key={`preview-dup-${index}`} className="text-sm font-medium px-8">
-                    {announcement || 'Announcement text will appear here'}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Scrolling animation with {currentAnnouncements.filter(a => a.trim()).length} messages</span>
-              <span>Animation speed: {Math.max(20, currentAnnouncements.length * 4)}s per cycle</span>
-            </div>
-          </div>
-        ) : (
-          <div className="h-12 flex items-center justify-center text-center text-sm rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-500">
-            {!config.announcementbar?.enabled
-              ? 'Announcement bar is disabled'
-              : 'No announcement messages to preview'
-            }
-          </div>
-        )}
-      </div>
     </div>
   );
 };
