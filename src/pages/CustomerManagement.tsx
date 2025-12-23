@@ -4,17 +4,11 @@ import CustomerDetailModal from '../components/modals/CustomerDetailModal';
 import toast from 'react-hot-toast';
 import {
   Search,
-  Filter,
   Download,
   Eye,
   Mail,
-  Calendar,
-  ShoppingBag,
-  Heart,
-  TrendingUp,
   Users,
-  DollarSign,
-  Activity,
+  Heart,
   MessageSquare,
   Trash2,
   CheckCircle,
@@ -47,23 +41,6 @@ interface ContactInquiry {
   updatedAt: string;
 }
 
-interface CustomerAnalytics {
-  totals: {
-    customers: number;
-    newThisMonth: number;
-    activeThisWeek: number;
-  };
-  customerSegments: {
-    withOrders: number;
-    withWishlist: number;
-    withCart: number;
-    newCustomers: number;
-  };
-  wishlistAnalytics: {
-    averageWishlistSize: number;
-  };
-}
-
 interface CustomerPagination {
   currentPage: number;
   totalPages: number;
@@ -76,7 +53,6 @@ interface CustomerPagination {
 const CustomerManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'customers' | 'inquiries'>('customers');
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [analytics, setAnalytics] = useState<CustomerAnalytics | null>(null);
   const [pagination, setPagination] = useState<CustomerPagination>({
     currentPage: 1,
     totalPages: 1,
@@ -128,20 +104,6 @@ const CustomerManagement: React.FC = () => {
       toast.error('Failed to load customers');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Load analytics data
-  const loadAnalytics = async () => {
-    try {
-      const response = await fetch('http://localhost:5001/api/admin/customers/analytics/overview');
-      const data = await response.json();
-
-      if (data.success) {
-        setAnalytics(data.data);
-      }
-    } catch (error) {
-      console.error('Error loading analytics:', error);
     }
   };
 
@@ -246,7 +208,6 @@ const CustomerManagement: React.FC = () => {
   }, [pagination.currentPage, searchTerm, sortBy, sortOrder]);
 
   useEffect(() => {
-    loadAnalytics();
     loadInquiries(); // Load inquiries on mount
   }, []);
 
@@ -333,63 +294,6 @@ const CustomerManagement: React.FC = () => {
       {/* Customers Tab Content */}
       {activeTab === 'customers' && (
         <>
-          {/* Analytics Cards */}
-          {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Customers</p>
-                <p className="text-2xl font-bold text-foreground">{analytics.totals.customers}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              +{analytics.totals.newThisMonth} this month
-            </p>
-          </div>
-
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">With Orders</p>
-                <p className="text-2xl font-bold text-foreground">{analytics.customerSegments.withOrders}</p>
-              </div>
-              <ShoppingBag className="h-8 w-8 text-green-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {Math.round((analytics.customerSegments.withOrders / analytics.totals.customers) * 100)}% of total
-            </p>
-          </div>
-
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">With Wishlist</p>
-                <p className="text-2xl font-bold text-foreground">{analytics.customerSegments.withWishlist}</p>
-              </div>
-              <Heart className="h-8 w-8 text-red-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Avg {analytics.wishlistAnalytics.averageWishlistSize} items
-            </p>
-          </div>
-
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active This Week</p>
-                <p className="text-2xl font-bold text-foreground">{analytics.totals.activeThisWeek}</p>
-              </div>
-              <Activity className="h-8 w-8 text-purple-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Recent activity
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <h2 className="text-xl font-semibold text-foreground">Customer Management</h2>

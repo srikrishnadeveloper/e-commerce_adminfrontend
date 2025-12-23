@@ -475,11 +475,37 @@ const BulkEmailSender: React.FC = () => {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="p-4 overflow-y-auto max-h-[calc(80vh-60px)]">
+            <div className="p-4 overflow-y-auto max-h-[calc(80vh-60px)] bg-gray-100">
               <div 
-                className="bg-white rounded border"
+                className="bg-white rounded border shadow-sm email-preview-container"
                 dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
+              <style>{`
+                .email-preview-container {
+                  background-color: #ffffff !important;
+                  color: #333333;
+                  color-scheme: light;
+                  padding: 20px;
+                }
+                .email-preview-container *:not([style*="color"]) {
+                  color: inherit;
+                }
+                .email-preview-container h1:not([style*="color"]),
+                .email-preview-container h2:not([style*="color"]),
+                .email-preview-container h3:not([style*="color"]),
+                .email-preview-container h4:not([style*="color"]) {
+                  color: #1a1a1a;
+                }
+                .email-preview-container p:not([style*="color"]),
+                .email-preview-container span:not([style*="color"]),
+                .email-preview-container div:not([style*="color"]),
+                .email-preview-container li:not([style*="color"]) {
+                  color: #333333;
+                }
+                .email-preview-container a:not([style*="color"]) {
+                  color: #2563eb;
+                }
+              `}</style>
             </div>
           </div>
         </div>

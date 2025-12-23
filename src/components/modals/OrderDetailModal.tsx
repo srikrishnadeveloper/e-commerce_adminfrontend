@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
 import {
@@ -8,9 +8,7 @@ import {
   MapPin,
   CreditCard,
   Clock,
-  Edit,
   Save,
-  MessageSquare,
   Truck,
   RefreshCw,
   CheckCircle,
@@ -96,7 +94,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [newStatus, setNewStatus] = useState(order.status);
   const [newPaymentStatus, setNewPaymentStatus] = useState(order.paymentStatus);
-  const [newNote, setNewNote] = useState('');
   
   // Tracking modal state
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
@@ -111,7 +108,20 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   // Refund modal state
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [refundAmount, setRefundAmount] = useState(order.total?.toString() || '0');
-  const [refundReason, setRefundReason] = useState('');
+
+  // Sync state when order prop changes
+  useEffect(() => {
+    setNewStatus(order.status);
+    setNewPaymentStatus(order.paymentStatus);
+    setRefundAmount(order.total?.toString() || '0');
+    setTrackingInfo({
+      carrier: order.shippingInfo?.carrier || '',
+      trackingNumber: order.shippingInfo?.trackingNumber || '',
+      trackingUrl: order.shippingInfo?.trackingUrl || '',
+      estimatedDelivery: order.shippingInfo?.estimatedDelivery?.split('T')[0] || '',
+      shippingMethod: order.shippingInfo?.shippingMethod || 'standard'
+    });
+  }, [order]);
 
   if (!isOpen) return null;
 
@@ -231,39 +241,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     }
   };
 
-  // Add note
-  const handleAddNote = async () => {
-    if (!newNote.trim()) {
-      toast.error('Please enter a note');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:5001/api/admin/orders/${order._id}/notes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          note: newNote.trim(),
-          type: 'internal'
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success('Note added successfully');
-        setNewNote('');
-        onOrderUpdate();
-      } else {
-        throw new Error(data.message);
-      }
-    } catch (error: any) {
-      console.error('Add note error:', error);
-      toast.error(error.message || 'Failed to add note');
-    }
-  };
-
   // Handle tracking info update
   const handleUpdateTracking = async () => {
     if (!trackingInfo.trackingNumber && !trackingInfo.carrier) {
@@ -323,7 +300,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         },
         body: JSON.stringify({
           paymentStatus: 'refunded',
-          notes: `Refund processed: ₹${parseFloat(refundAmount).toFixed(2)}. Reason: ${refundReason || 'Not specified'}`
+          refundAmount: parseFloat(refundAmount),
+          notes: `Refund processed: ₹${parseFloat(refundAmount).toFixed(2)}`
         })
       });
 
@@ -336,7 +314,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            note: `Refund processed: ₹${parseFloat(refundAmount).toFixed(2)}. Reason: ${refundReason || 'Not specified'}`,
+            note: `Refund processed: ₹${parseFloat(refundAmount).toFixed(2)}`,
             type: 'internal'
           })
         });
@@ -344,7 +322,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         toast.success('Refund processed successfully');
         setIsRefundModalOpen(false);
         setRefundAmount(order.total?.toString() || '0');
-        setRefundReason('');
         onOrderUpdate();
         onClose();
       } else {
@@ -405,11 +382,34 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground"
                     disabled={order.status === 'cancelled'}
                   >
-                    <option value="pending">Pending {order.status === 'pending' ? '(current)' : ''}</option>
-                    <option value="processing">Processing {order.status === 'processing' ? '(current)' : ''}</option>
-                    <option value="shipped">Shipped {order.status === 'shipped' ? '(current)' : ''}</option>
-                    <option value="delivered">Delivered {order.status === 'delivered' ? '(current)' : ''}</option>
-                    <option value="cancelled">Cancelled {order.status === 'cancelled' ? '(current)' : ''}</option>
+                    {/* Show current status */}
+                    <option value={order.status}>
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)} (current)
+                    </option>
+                    {/* Show valid transitions based on current status */}
+                    {order.status === 'pending' && (
+                      <>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="cancelled">Cancelled</option>
+                      </>
+                    )}
+                    {order.status === 'processing' && (
+                      <>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </>
+                    )}
+                    {order.status === 'shipped' && (
+                      <>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </>
+                    )}
+                    {order.status === 'delivered' && (
+                      <option value="cancelled">Cancelled</option>
+                    )}
                   </select>
                   {order.status === 'cancelled' && (
                     <p className="text-xs text-yellow-500 mt-1">
@@ -484,7 +484,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 >
                   Timeline
                 </button>
-                <button
+                {/* Notes tab hidden as per user request */}
+                {/* <button
                   onClick={() => setActiveTab('notes')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'notes'
@@ -493,7 +494,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   }`}
                 >
                   Notes ({order.orderNotes?.length || 0})
-                </button>
+                </button> */}
               </nav>
             </div>
 
@@ -605,31 +606,13 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               </div>
             )}
 
-            {activeTab === 'notes' && (
+            {/* Notes tab hidden - as per user request */}
+            {false && activeTab === 'notes' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-lg font-semibold text-foreground">Order Notes</h4>
                 </div>
 
-                {/* Add Note */}
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <h5 className="font-medium text-foreground mb-3">Add Internal Note</h5>
-                  <div className="space-y-3">
-                    <textarea
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Enter internal note..."
-                      className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground resize-none"
-                      rows={3}
-                    />
-                    <Button onClick={handleAddNote} size="sm">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Add Note
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Existing Notes */}
                 {order.orderNotes && order.orderNotes.length > 0 ? (
                   <div className="space-y-3">
                     {order.orderNotes.map((note, index) => (
@@ -736,7 +719,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 className="w-full" 
                 size="sm"
                 onClick={() => setIsRefundModalOpen(true)}
-                disabled={order.paymentStatus === 'refunded' || order.paymentStatus === 'unpaid'}
+                disabled={order.paymentStatus === 'refunded'}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 {order.paymentStatus === 'refunded' ? 'Refund Processed' : 'Process Refund'}
@@ -887,16 +870,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <p className="text-xs text-muted-foreground mt-1">Maximum refund: {formatPrice(order.total)}</p>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Reason for Refund</label>
-                <textarea
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Enter reason for refund..."
-                  rows={3}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground resize-none"
-                />
-              </div>
             </div>
             
             <div className="flex items-center space-x-3 mt-6">

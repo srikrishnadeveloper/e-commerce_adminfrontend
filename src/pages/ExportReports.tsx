@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Calendar,
   Loader2,
-  CheckCircle,
   FileText,
   RefreshCw
 } from 'lucide-react';
@@ -36,7 +35,6 @@ const ExportReports: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState('');
-  const [groupBy, setGroupBy] = useState('daily');
   const [category, setCategory] = useState('');
   const [inStock, setInStock] = useState('');
   const [format, setFormat] = useState<'csv' | 'json'>('csv');
@@ -69,9 +67,9 @@ const ExportReports: React.FC = () => {
       // Set default types
       setExportTypes([
         { id: 'orders', name: 'Orders', description: 'Export all orders', endpoint: '/api/export/orders', filters: ['startDate', 'endDate', 'status'] },
-        { id: 'customers', name: 'Customers', description: 'Export customers', endpoint: '/api/export/customers', filters: ['startDate', 'endDate'] },
-        { id: 'products', name: 'Products', description: 'Export products', endpoint: '/api/export/products', filters: ['category', 'inStock'] },
-        { id: 'sales', name: 'Sales Report', description: 'Export sales', endpoint: '/api/export/sales', filters: ['startDate', 'endDate', 'groupBy'] }
+        { id: 'customers', name: 'Customers', description: 'Export customers', endpoint: '/api/export/customers', filters: [] },
+        { id: 'products', name: 'Products', description: 'Export products', endpoint: '/api/export/products', filters: ['inStock'] },
+        { id: 'sales', name: 'Sales Report', description: 'Export sales', endpoint: '/api/export/sales', filters: ['startDate', 'endDate'] }
       ]);
     } finally {
       setLoading(false);
@@ -94,9 +92,6 @@ const ExportReports: React.FC = () => {
       }
       if (exportType.filters.includes('status') && status) {
         params.append('status', status);
-      }
-      if (exportType.filters.includes('groupBy') && groupBy) {
-        params.append('groupBy', groupBy);
       }
       if (exportType.filters.includes('category') && category) {
         params.append('category', category);
@@ -264,22 +259,6 @@ const ExportReports: React.FC = () => {
                 </select>
               </div>
 
-              {/* Group By (for sales report) */}
-              <div>
-                <Label htmlFor="groupBy">Group By (Sales)</Label>
-                <select
-                  id="groupBy"
-                  value={groupBy}
-                  onChange={(e) => setGroupBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
-                >
-                  <option value="hourly">Hourly</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-
               {/* Stock Filter (for products) */}
               <div>
                 <Label htmlFor="inStock">Stock Status</Label>
@@ -389,17 +368,6 @@ const ExportReports: React.FC = () => {
             );
           })}
         </div>
-      </div>
-
-      {/* Recent Exports (placeholder for future feature) */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-green-500" />
-          Export History
-        </h3>
-        <p className="text-muted-foreground text-center py-8">
-          Export history tracking coming soon...
-        </p>
       </div>
     </div>
   );

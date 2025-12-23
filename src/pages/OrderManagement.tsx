@@ -63,6 +63,8 @@ interface Order {
 interface OrderSummary {
   statusCounts: Record<string, number>;
   paymentCounts: Record<string, number>;
+  totalRevenue?: number;
+  totalAllOrders?: number;
 }
 
 interface PaginationInfo {
@@ -79,6 +81,7 @@ const OrderManagement: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -100,6 +103,14 @@ const OrderManagement: React.FC = () => {
   const [bulkStatus, setBulkStatus] = useState('');
   const [isExporting, setIsExporting] = useState(false);
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Fetch orders
   const fetchOrders = async () => {
     try {
@@ -111,7 +122,7 @@ const OrderManagement: React.FC = () => {
         limit: '20'
       });
 
-      if (searchTerm) params.append('search', searchTerm);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       if (statusFilter) params.append('status', statusFilter);
       if (paymentFilter) params.append('paymentStatus', paymentFilter);
       if (dateFrom) params.append('dateFrom', dateFrom);
@@ -158,7 +169,7 @@ const OrderManagement: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, searchTerm, statusFilter, paymentFilter, dateFrom, dateTo]);
+  }, [currentPage, debouncedSearch, statusFilter, paymentFilter, dateFrom, dateTo]);
 
   // Format currency
   const formatPrice = (price: number) => {
@@ -237,11 +248,12 @@ const OrderManagement: React.FC = () => {
     setIsDetailModalOpen(true);
   };
 
-  // Handle search
+  // Handle search form submit
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchOrders();
+    // Immediately trigger search without waiting for debounce
+    setDebouncedSearch(searchTerm);
   };
 
   // Handle filter change
@@ -350,6 +362,7 @@ const OrderManagement: React.FC = () => {
   // Clear all filters
   const handleClearFilters = () => {
     setSearchTerm('');
+    setDebouncedSearch('');
     setStatusFilter('');
     setPaymentFilter('');
     setDateFrom('');
@@ -357,9 +370,9 @@ const OrderManagement: React.FC = () => {
     setCurrentPage(1);
   };
 
-  // Calculate total values for summary cards
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-  const totalOrders = pagination.totalOrders;
+  // Use summary values from backend (total of ALL orders, not just current page)
+  const totalRevenue = summary.totalRevenue || 0;
+  const totalAllOrders = summary.totalAllOrders || 0;
 
   return (
     <div className="space-y-6">
@@ -396,7 +409,7 @@ const OrderManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold text-foreground">{totalOrders.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-foreground">{totalAllOrders.toLocaleString()}</p>
             </div>
             <ShoppingBag className="h-8 w-8 text-blue-400" />
           </div>
