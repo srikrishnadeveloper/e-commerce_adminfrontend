@@ -133,10 +133,6 @@ const CategoryManagement: React.FC = () => {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-      return;
-    }
-
     try {
       await ensureApiBase();
       const response = await categoriesAPI.delete(categoryId);
@@ -177,7 +173,7 @@ const CategoryManagement: React.FC = () => {
 
   const handleBulkStatusUpdate = async (status: 'active' | 'disabled') => {
     if (selectedCategories.length === 0) {
-      alert('Please select categories to update');
+      toast.error('Please select categories to update');
       return;
     }
 

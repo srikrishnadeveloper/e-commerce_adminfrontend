@@ -53,6 +53,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const [rawJsonData, setRawJsonData] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'images' | 'json'>('basic');
+  const [showSpecModal, setShowSpecModal] = useState(false);
+  const [newSpecKey, setNewSpecKey] = useState('');
 
   useEffect(() => {
     setFormData(
@@ -321,9 +323,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   };
 
   const addSpecification = () => {
-    const key = prompt('Enter specification key:');
-    if (key && key.trim()) {
-      handleSpecificationChange(key.trim(), '');
+    setShowSpecModal(true);
+    setNewSpecKey('');
+  };
+
+  const handleAddSpecificationSubmit = () => {
+    if (newSpecKey && newSpecKey.trim()) {
+      handleSpecificationChange(newSpecKey.trim(), '');
+      setShowSpecModal(false);
+      setNewSpecKey('');
     }
   };
 
@@ -1108,6 +1116,50 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           </div>
         </form>
       </div>
+
+      {/* Add Specification Modal */}
+      {showSpecModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Add Specification</h3>
+            <Label htmlFor="specKey" className="mb-2 block">Specification Key</Label>
+            <Input
+              id="specKey"
+              placeholder="e.g., Material, Weight, Dimensions"
+              value={newSpecKey}
+              onChange={(e) => setNewSpecKey(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddSpecificationSubmit();
+                }
+              }}
+              autoFocus
+              className="mb-4"
+            />
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowSpecModal(false);
+                  setNewSpecKey('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAddSpecificationSubmit}
+                disabled={!newSpecKey.trim()}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

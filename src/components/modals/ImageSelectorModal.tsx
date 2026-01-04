@@ -46,7 +46,7 @@ const ImageSelectorModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) => {
     loadImages();
   }, [isOpen]);
 
-  const supported = useMemo(() => new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']), []);
+  const supported = useMemo(() => new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico']), []);
   const filtered = useMemo(() => images.filter((i) => supported.has(i.extension?.toLowerCase?.())), [images, supported]);
 
   const loadImages = async () => {
@@ -81,7 +81,7 @@ const ImageSelectorModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) => {
     });
 
     if (validFiles.length === 0) {
-      toast.error('Please select valid image files (PNG, JPG, JPEG, GIF, WebP, SVG)');
+      toast.error('Please select valid image files (PNG, JPG, JPEG, GIF, WebP, SVG, ICO)');
       return;
     }
 
@@ -117,8 +117,6 @@ const ImageSelectorModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) => {
   };
 
   const handleDeleteImage = async (imageName: string) => {
-    if (!confirm(`Are you sure you want to delete "${imageName}"?`)) return;
-
     try {
       await imagesAPI.delete(imageName);
       toast.success('Image deleted successfully');

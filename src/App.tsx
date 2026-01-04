@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import LoginPage from './pages/LoginPage';
 import { Toaster } from 'react-hot-toast';
+import { useFavicon } from './hooks/useFavicon';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Load favicon from site config
+  useFavicon();
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -21,7 +25,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
+    localStorage.removeItem('adminInfo');
     setIsAuthenticated(false);
   };
 

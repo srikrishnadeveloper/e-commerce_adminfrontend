@@ -15,11 +15,10 @@ interface SiteConfig {
       buttonText: string;
     };
     socialMedia?: {
+      youtube?: { url: string; enabled: boolean };
       facebook?: { url: string; enabled: boolean };
-      twitter?: { url: string; enabled: boolean };
       instagram?: { url: string; enabled: boolean };
-      tiktok?: { url: string; enabled: boolean };
-      pinterest?: { url: string; enabled: boolean };
+      telegram?: { url: string; enabled: boolean };
     };
     sections?: Array<{
       title: string;
@@ -116,7 +115,7 @@ const FooterTab: React.FC<FooterTabProps> = ({
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-foreground">Social Media Links</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {['facebook', 'twitter', 'instagram', 'tiktok', 'pinterest'].map((platform) => (
+        {['youtube', 'facebook', 'instagram', 'telegram'].map((platform) => (
           <div key={platform} className="p-4 border border-border rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-medium text-foreground capitalize">{platform}</h4>

@@ -143,8 +143,6 @@ const ImageManagement: React.FC = () => {
     const filename = imagePath.split('/').pop();
     if (!filename) return;
 
-    if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
-
     try {
       const response = await fetch(`${API_BASE}/api/images/${encodeURIComponent(filename)}`, {
         method: 'DELETE',
@@ -171,8 +169,6 @@ const ImageManagement: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (selectedImages.size === 0) return;
-    
-    if (!confirm(`Are you sure you want to delete ${selectedImages.size} image(s)?`)) return;
 
     let successCount = 0;
     let failCount = 0;

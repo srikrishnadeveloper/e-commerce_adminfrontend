@@ -115,7 +115,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="image">Image URL</Label>
+                <Label htmlFor="image">Image URL <span className="text-xs text-gray-500">(Recommended: 800 x 600)</span></Label>
                 <div className="flex gap-2">
                   <Input
                     id="image"

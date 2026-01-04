@@ -24,8 +24,6 @@ interface ExportType {
   filters: string[];
 }
 
-const API_BASE = 'http://localhost:5001';
-
 const ExportReports: React.FC = () => {
   const [exportTypes, setExportTypes] = useState<ExportType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +52,7 @@ const ExportReports: React.FC = () => {
   const loadExportTypes = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE}/api/export/types`, {
+      const res = await fetch('/api/export/types', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -101,7 +99,7 @@ const ExportReports: React.FC = () => {
       }
       params.append('format', format);
       
-      const url = `${API_BASE}${exportType.endpoint}?${params.toString()}`;
+      const url = `${exportType.endpoint}?${params.toString()}`;
       
       if (format === 'json') {
         const res = await fetch(url, {
@@ -194,7 +192,7 @@ const ExportReports: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Download className="h-6 w-6" />
@@ -210,6 +208,26 @@ const ExportReports: React.FC = () => {
         </Button>
       </div>
 
+      {/* Top-level Date Range Picker */}
+      <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-lg p-4 mb-2">
+        <span className="text-gray-400 text-sm font-medium">Date Range:</span>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="bg-gray-700 text-white text-sm rounded px-3 py-1.5 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ colorScheme: 'dark' }}
+        />
+        <span className="text-gray-500 text-sm">to</span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="bg-gray-700 text-white text-sm rounded px-3 py-1.5 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ colorScheme: 'dark' }}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Filters Panel */}
         <div className="lg:col-span-1 space-y-6">
@@ -220,26 +238,8 @@ const ExportReports: React.FC = () => {
             </h3>
 
             <div className="space-y-4">
-              {/* Date Range */}
-              <div>
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  type="date"
-                  id="startDate"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  type="date"
-                  id="endDate"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+              {/* Date Range (now hidden, moved to top) */}
+              {/* ...existing code... */}
 
               {/* Order Status Filter */}
               <div>

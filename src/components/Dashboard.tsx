@@ -24,6 +24,7 @@ import {
   LogOut,
   CreditCard,
   Image,
+  Shield,
 } from 'lucide-react';
 import ProductModal from './modals/ProductModal';
 import ProductDetails from './modals/ProductDetails';
@@ -35,6 +36,7 @@ import BulkEmailSender from '../pages/BulkEmailSender';
 import ExportReports from '../pages/ExportReports';
 import PaymentManagement from '../pages/PaymentManagement';
 import ImageManagement from '../pages/ImageManagement';
+import AdminManagement from '../pages/AdminManagement';
 import SiteConfigPanel from './SiteConfigPanel';
 import type { Product, Category } from '../types';
 
@@ -61,6 +63,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('analytics');
+  const [currentAdmin, setCurrentAdmin] = useState<any>(null);
+
+  // Get current admin info
+  useEffect(() => {
+    const adminInfo = localStorage.getItem('adminInfo');
+    if (adminInfo) {
+      setCurrentAdmin(JSON.parse(adminInfo));
+    }
+  }, []);
 
   useEffect(() => {
     // CategoryManagement handles its own data loading, so skip for 'categories' section
@@ -402,6 +413,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <Settings className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
               Settings
             </button>
+            {/* Admin Management - Only for Priority 1 */}
+            {currentAdmin?.priority === 1 && (
+              <button 
+                onClick={() => setCurrentSection('admin-management')}
+                className={`${currentSection === 'admin-management' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'} group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left`}
+              >
+                <Shield className="text-muted-foreground group-hover:text-foreground mr-3 h-5 w-5" />
+                Admin Management
+              </button>
+            )}
             <button 
               onClick={onLogout}
               className="text-muted-foreground hover:text-red-500 hover:bg-red-500/10 group flex items-center px-3 py-2 text-sm font-medium rounded-md w-full text-left"
@@ -441,6 +462,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 {currentSection === 'customers' && 'Customers'}
                 {currentSection === 'analytics' && 'Analytics'}
                 {currentSection === 'settings' && 'Settings'}
+                {currentSection === 'admin-management' && 'Admin Management'}
+                {currentSection === 'bulk-email' && 'Bulk Email'}
+                {currentSection === 'export' && 'Export Reports'}
               </h1>
             </div>
             
@@ -693,6 +717,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           {currentSection === 'settings' && (
             <SiteConfigPanel />
           )}
+
+          {currentSection === 'admin-management' && <AdminManagement />}
         </main>
       </div>
 

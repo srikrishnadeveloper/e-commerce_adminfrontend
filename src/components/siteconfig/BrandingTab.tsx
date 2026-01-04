@@ -32,7 +32,7 @@ const BrandingTab: React.FC<BrandingTabProps> = ({
         <h3 className="text-lg font-semibold text-foreground">Logo Settings</h3>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Logo URL</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Logo URL <span className="text-xs text-gray-500">(Recommended: 140 x 21)</span></label>
             <div className="flex gap-2">
               <Input
                 value={config.branding?.logo?.url || ''}
@@ -65,6 +65,7 @@ const BrandingTab: React.FC<BrandingTabProps> = ({
       {/* Favicon Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">Favicon</h3>
+        <p className="text-sm text-muted-foreground">Upload a favicon image (ICO, PNG, or SVG) that will appear in browser tabs.</p>
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">Favicon URL</label>
           <div className="flex gap-2">

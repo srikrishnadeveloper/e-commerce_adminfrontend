@@ -235,7 +235,7 @@ const HomepageTab: React.FC<HomepageTabProps> = ({
               />
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium text-foreground mb-1">Feature Image URL</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Feature Image URL <span className="text-xs text-gray-500">(Recommended: 400 x 400)</span></label>
               <div className="flex gap-2">
                 <Input
                   value={feature.image}
@@ -464,7 +464,7 @@ const HomepageTab: React.FC<HomepageTabProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Image URL</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Image URL <span className="text-xs text-gray-500">(Recommended: 1400 x 1600)</span></label>
                 <div className="flex gap-2">
                   <Input
                     value={collection.image}

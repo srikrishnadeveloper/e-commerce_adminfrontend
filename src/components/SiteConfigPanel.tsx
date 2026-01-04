@@ -32,6 +32,7 @@ import HomepageTab from './siteconfig/HomepageTab';
 import HeroTab from './siteconfig/HeroTab';
 import FooterTab from './siteconfig/FooterTab';
 import ContactUsTab from './siteconfig/ContactUsTab';
+import AboutUsTab from './siteconfig/AboutUsTab';
 
 import JsonTab from './siteconfig/JsonTab';
 
@@ -66,6 +67,7 @@ const SiteConfigPanel: React.FC = () => {
     { id: 'hero', label: 'Hero Section', icon: Image },
     { id: 'footer', label: 'Footer', icon: Building },
     { id: 'contactus', label: 'Contact Us', icon: MessageSquare },
+    { id: 'aboutus', label: 'About Us', icon: Building },
 
     { id: 'json', label: 'Raw JSON', icon: Code }
   ];
@@ -125,6 +127,11 @@ const SiteConfigPanel: React.FC = () => {
           toast.success('Site configuration saved successfully!');
           setLastSaved(new Date());
           setHasUnsavedChanges(false);
+          
+          // Update favicon if it changed
+          if (config.branding?.faviconUrl) {
+            updateFavicon(config.branding.faviconUrl);
+          }
         } else {
           console.error('Save failed:', result);
           toast.error('Failed to save site configuration');
@@ -139,6 +146,31 @@ const SiteConfigPanel: React.FC = () => {
       toast.error('Error saving site configuration');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const updateFavicon = (faviconUrl: string) => {
+    // Get or create favicon link element
+    let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    
+    // Update favicon href
+    const fullUrl = faviconUrl.startsWith('http') 
+      ? faviconUrl 
+      : `http://localhost:5001${faviconUrl}`;
+    link.href = fullUrl;
+    
+    // Also update the type based on extension
+    if (faviconUrl.endsWith('.svg')) {
+      link.type = 'image/svg+xml';
+    } else if (faviconUrl.endsWith('.png')) {
+      link.type = 'image/png';
+    } else if (faviconUrl.endsWith('.ico')) {
+      link.type = 'image/x-icon';
     }
   };
 
@@ -350,6 +382,8 @@ const SiteConfigPanel: React.FC = () => {
             removeArrayItem={removeArrayItem}
           />
         );
+      case 'aboutus':
+        return <AboutUsTab />;
 
       case 'json':
         return (

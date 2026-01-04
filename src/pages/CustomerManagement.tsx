@@ -34,6 +34,7 @@ interface ContactInquiry {
   _id: string;
   name: string;
   email: string;
+  phone: string;
   message: string;
   status: 'new' | 'read' | 'replied' | 'archived';
   adminNotes?: string;
@@ -155,8 +156,6 @@ const CustomerManagement: React.FC = () => {
 
   // Delete inquiry
   const deleteInquiry = async (inquiryId: string) => {
-    if (!confirm('Are you sure you want to delete this inquiry?')) return;
-    
     try {
       const loadingToast = toast.loading('Deleting inquiry...');
       const response = await fetch(`http://localhost:5001/api/contact/${inquiryId}`, {
@@ -685,6 +684,15 @@ const CustomerManagement: React.FC = () => {
                       </a>
                     </p>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Phone Number</label>
+                  <p className="text-foreground mt-1">
+                    <a href={`tel:${selectedInquiry.phone}`} className="text-blue-500 hover:underline">
+                      {selectedInquiry.phone}
+                    </a>
+                  </p>
                 </div>
 
                 <div>

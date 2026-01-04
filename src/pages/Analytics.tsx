@@ -101,6 +101,9 @@ const Analytics: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState('30d');
   const [chartType, setChartType] = useState<'line' | 'bar' | 'area'>('area');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [useCustomDates, setUseCustomDates] = useState(false);
 
   // Helper to get time ago
   const getTimeAgo = (date: Date): string => {
@@ -120,17 +123,23 @@ const Analytics: React.FC = () => {
     setLoading(true);
     try {
       // Calculate date range
-      const endDate = new Date();
-      const startDate = new Date();
-      switch (timeframe) {
-        case '24h': startDate.setHours(startDate.getHours() - 24); break;
-        case '7d': startDate.setDate(startDate.getDate() - 7); break;
-        case '30d': startDate.setDate(startDate.getDate() - 30); break;
-        case '90d': startDate.setDate(startDate.getDate() - 90); break;
-        case '1y': startDate.setFullYear(startDate.getFullYear() - 1); break;
+      let startDate = new Date();
+      let endDate = new Date();
+      
+      if (useCustomDates && customStartDate && customEndDate) {
+        startDate = new Date(customStartDate);
+        endDate = new Date(customEndDate);
+      } else {
+        switch (timeframe) {
+          case '24h': startDate.setHours(startDate.getHours() - 24); break;
+          case '7d': startDate.setDate(startDate.getDate() - 7); break;
+          case '30d': startDate.setDate(startDate.getDate() - 30); break;
+          case '90d': startDate.setDate(startDate.getDate() - 90); break;
+          case '1y': startDate.setFullYear(startDate.getFullYear() - 1); break;
+        }
       }
 
-      const dateParams = `startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+      const dateParams = `startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&originalRevenue=true`;
 
       // Fetch from all endpoints in parallel
       const [dashboardRes, revenueRes, ordersRes, customersRes, productsRes, recentOrdersRes] = await Promise.all([
@@ -329,7 +338,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     fetchMetrics();
-  }, [timeframe]);
+  }, [timeframe, useCustomDates, customStartDate, customEndDate]);
 
   // Format currency
   const formatCurrency = (amount: number | undefined | null) => {
@@ -407,18 +416,41 @@ const Analytics: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Timeframe Buttons */}
           <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-1">
             {['24h', '7d', '30d', '90d', '1y'].map((tf) => (
               <button
                 key={tf}
-                onClick={() => { setTimeframe(tf); setLoading(true); }}
+                onClick={() => { setTimeframe(tf); setUseCustomDates(false); setLoading(true); }}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  timeframe === tf ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  timeframe === tf && !useCustomDates ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'
                 }`}
               >
                 {tf}
               </button>
             ))}
+          </div>
+
+          {/* Custom Date Range */}
+          <div className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-700">
+            <span className="text-gray-400 text-sm font-medium">Date Range:</span>
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => { setCustomStartDate(e.target.value); setUseCustomDates(true); }}
+              className="bg-gray-700 text-white text-sm rounded px-3 py-1.5 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Start Date"
+              style={{ colorScheme: 'dark' }}
+            />
+            <span className="text-gray-500 text-sm">to</span>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => { setCustomEndDate(e.target.value); setUseCustomDates(true); }}
+              className="bg-gray-700 text-white text-sm rounded px-3 py-1.5 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="End Date"
+              style={{ colorScheme: 'dark' }}
+            />
           </div>
 
           <button 

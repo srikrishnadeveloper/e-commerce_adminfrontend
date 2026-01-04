@@ -28,6 +28,8 @@ const BulkEmailSender: React.FC = () => {
   const [recipientGroups, setRecipientGroups] = useState<RecipientGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [subject, setSubject] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [recipientCount, setRecipientCount] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [customEmails, setCustomEmails] = useState<string[]>([]);
@@ -136,14 +138,16 @@ const BulkEmailSender: React.FC = () => {
       return;
     }
 
-    const recipientCount = useCustomEmails 
+    const count = useCustomEmails 
       ? customEmails.length 
       : recipientGroups.find(g => g.id === selectedGroup)?.count || 0;
 
-    if (!window.confirm(`Are you sure you want to send this email to ${recipientCount} recipients?`)) {
-      return;
-    }
+    setRecipientCount(count);
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmSend = async () => {
+    setShowConfirmModal(false);
     setIsSending(true);
     setSendResult(null);
 
@@ -506,6 +510,32 @@ const BulkEmailSender: React.FC = () => {
                   color: #2563eb;
                 }
               `}</style>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Confirm Email Send</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to send this email to {recipientCount} recipients?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmSend}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Send Email
+              </Button>
             </div>
           </div>
         </div>

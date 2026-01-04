@@ -89,7 +89,7 @@ const HeroTab: React.FC<HeroTabProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Image URL</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Image URL <span className="text-xs text-gray-500">(Recommended: 1400 x 909)</span></label>
               <div className="flex gap-2">
                 <Input
                   value={slide.image}
