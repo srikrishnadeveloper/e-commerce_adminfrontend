@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import OrderDetailModal from '../components/modals/OrderDetailModal';
 import toast from 'react-hot-toast';
+import { authFetch } from '../services/api';
 import {
   Search,
   Filter,
@@ -128,10 +129,10 @@ const OrderManagement: React.FC = () => {
       if (dateFrom) params.append('dateFrom', dateFrom);
       if (dateTo) params.append('dateTo', dateTo);
 
-      const url = `http://localhost:5001/api/admin/orders?${params}`;
+      const url = `/api/admin/orders?${params}`;
       console.log('Fetching from URL:', url);
 
-      const response = await fetch(url);
+      const response = await authFetch(url);
       console.log('Response status:', response.status);
 
       if (!response.ok) {
@@ -331,11 +332,8 @@ const OrderManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5001/api/admin/orders/bulk/status', {
+      const response = await authFetch('http://localhost:5001/api/admin/orders/bulk/status', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           orderIds: selectedOrders,
           status: bulkStatus,

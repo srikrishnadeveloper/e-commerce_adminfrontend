@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import { X, Star, Package, Tag, Info } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface Product {
   _id: string;
@@ -34,10 +35,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ isOpen, onClose, produc
     }).format(price);
   };
 
-  const resolveImg = (p?: string) => {
-  if (!p) return 'http://localhost:5001/images/placeholder.svg';
-  return p.startsWith('http') ? p : `http://localhost:5001${p}`;
-  };
+  const resolveImg = (p?: string) => getImageUrl(p);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">

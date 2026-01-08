@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import toast from 'react-hot-toast';
+import { authFetch } from '../services/api';
 import {
   TrendingUp,
   DollarSign,
@@ -47,7 +48,7 @@ const OrderAnalytics: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5001/api/admin/orders/analytics/overview?period=${selectedPeriod}`);
+      const response = await authFetch(`http://localhost:5001/api/admin/orders/analytics/overview?period=${selectedPeriod}`);
       const data = await response.json();
 
       if (data.success) {

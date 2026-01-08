@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface SiteConfig {
   branding?: {
@@ -44,7 +45,7 @@ const BrandingTab: React.FC<BrandingTabProps> = ({
             {config.branding?.logo?.url && (
               <div className="mt-2">
                 <img
-                  src={(config.branding?.logo?.url || '').startsWith('http') ? (config.branding?.logo?.url as string) : `http://localhost:5001${config.branding?.logo?.url}`}
+                  src={getImageUrl(config.branding?.logo?.url)}
                   alt="Logo Preview"
                   className="w-20 h-20 object-contain rounded border bg-white"
                 />
@@ -79,7 +80,7 @@ const BrandingTab: React.FC<BrandingTabProps> = ({
           {config.branding?.faviconUrl && (
             <div className="mt-2">
               <img
-                src={(config.branding?.faviconUrl || '').startsWith('http') ? (config.branding?.faviconUrl as string) : `http://localhost:5001${config.branding?.faviconUrl}`}
+                src={getImageUrl(config.branding?.faviconUrl)}
                 alt="Favicon"
                 className="w-8 h-8 object-contain rounded border"
               />

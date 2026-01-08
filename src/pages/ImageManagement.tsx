@@ -140,11 +140,13 @@ const ImageManagement: React.FC = () => {
   };
 
   const handleDeleteImage = async (imagePath: string) => {
-    const filename = imagePath.split('/').pop();
-    if (!filename) return;
+    // Extract the relative path after /images/
+    // imagePath is like "/images/filename.png" or "/images/subdir/filename.png"
+    const relativePath = imagePath.replace(/^\/images\//, '');
+    if (!relativePath) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/images/${encodeURIComponent(filename)}`, {
+      const response = await fetch(`${API_BASE}/api/images/${encodeURIComponent(relativePath)}`, {
         method: 'DELETE',
       });
       
@@ -174,11 +176,12 @@ const ImageManagement: React.FC = () => {
     let failCount = 0;
 
     for (const imagePath of selectedImages) {
-      const filename = imagePath.split('/').pop();
-      if (!filename) continue;
+      // Extract the relative path after /images/
+      const relativePath = imagePath.replace(/^\/images\//, '');
+      if (!relativePath) continue;
 
       try {
-        const response = await fetch(`${API_BASE}/api/images/${encodeURIComponent(filename)}`, {
+        const response = await fetch(`${API_BASE}/api/images/${encodeURIComponent(relativePath)}`, {
           method: 'DELETE',
         });
         const data = await response.json();

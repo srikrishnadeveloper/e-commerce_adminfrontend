@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import toast from 'react-hot-toast';
+import ImageSelectorModal from '../components/modals/ImageSelectorModal';
 import {
   CreditCard,
   QrCode,
@@ -14,7 +15,8 @@ import {
   IndianRupee,
   Smartphone,
   Copy,
-  Check
+  Check,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:5001';
@@ -68,6 +70,7 @@ const PaymentManagement: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<PendingOrder | null>(null);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showImageSelector, setShowImageSelector] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -371,41 +374,67 @@ const PaymentManagement: React.FC = () => {
                 {settings.upiSettings.qrCodeImage ? (
                   <div className="space-y-4">
                     <img
-                      src={settings.upiSettings.qrCodeImage}
+                      src={settings.upiSettings.qrCodeImage.startsWith('http') ? settings.upiSettings.qrCodeImage : `http://localhost:5001${settings.upiSettings.qrCodeImage}`}
                       alt="UPI QR Code"
                       className="max-w-[200px] mx-auto rounded-lg"
                     />
-                    <label className="cursor-pointer">
-                      <span className="text-primary hover:underline text-sm">Change QR Code</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleQRUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => setShowImageSelector(true)}
+                        className="text-primary hover:underline text-sm flex items-center justify-center gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Select from Images Folder
+                      </button>
+                      <label className="cursor-pointer text-muted-foreground hover:text-foreground text-sm flex items-center justify-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Upload New Image
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleQRUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="flex flex-col items-center gap-3">
-                      {uploadingQR ? (
-                        <RefreshCw className="h-12 w-12 text-muted-foreground animate-spin" />
-                      ) : (
-                        <Upload className="h-12 w-12 text-muted-foreground" />
-                      )}
-                      <div>
-                        <p className="text-foreground font-medium">Upload QR Code</p>
-                        <p className="text-sm text-muted-foreground">PNG, JPG up to 2MB</p>
-                      </div>
+                  <div className="flex flex-col items-center gap-4">
+                    {uploadingQR ? (
+                      <RefreshCw className="h-12 w-12 text-muted-foreground animate-spin" />
+                    ) : (
+                      <QrCode className="h-12 w-12 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="text-foreground font-medium">No QR Code Set</p>
+                      <p className="text-sm text-muted-foreground">Select from images or upload new</p>
                     </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleQRUpload}
-                      className="hidden"
-                      disabled={uploadingQR}
-                    />
-                  </label>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowImageSelector(true)}
+                        className="gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Select Image
+                      </Button>
+                      <label className="cursor-pointer">
+                        <Button variant="outline" className="gap-2" asChild>
+                          <span>
+                            <Upload className="h-4 w-4" />
+                            Upload
+                          </span>
+                        </Button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleQRUpload}
+                          className="hidden"
+                          disabled={uploadingQR}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -629,6 +658,23 @@ const PaymentManagement: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Image Selector Modal for QR Code */}
+      <ImageSelectorModal
+        isOpen={showImageSelector}
+        onClose={() => setShowImageSelector(false)}
+        onSelect={(imagePath) => {
+          setSettings(prev => ({
+            ...prev,
+            upiSettings: {
+              ...prev.upiSettings,
+              qrCodeImage: imagePath
+            }
+          }));
+          setShowImageSelector(false);
+          toast.success('QR Code image selected! Click "Save UPI Settings" to apply.');
+        }}
+      />
     </div>
   );
 };

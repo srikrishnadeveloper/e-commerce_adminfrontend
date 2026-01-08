@@ -28,17 +28,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       category: '',
       categoryId: '',
       inStock: true,
-      bestseller: false,
       hotDeal: false,
       rating: 0,
       reviews: 0,
       images: [],
       colors: [],
       sizes: [],
-      sizeVariants: [],
-      features: [],
       specifications: {},
-      tags: [],
       stockQuantity: 0,
       trackInventory: true,
     }
@@ -55,6 +51,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'images' | 'json'>('basic');
   const [showSpecModal, setShowSpecModal] = useState(false);
   const [newSpecKey, setNewSpecKey] = useState('');
+  const [newSpecValue, setNewSpecValue] = useState('');
 
   useEffect(() => {
     setFormData(
@@ -67,17 +64,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         category: '',
         categoryId: '',
         inStock: true,
-        bestseller: false,
         hotDeal: false,
         rating: 0,
         reviews: 0,
         images: [],
         colors: [],
         sizes: [],
-        sizeVariants: [],
-        features: [],
         specifications: {},
-        tags: [],
         stockQuantity: 0,
         trackInventory: true,
       }
@@ -214,13 +207,29 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     }
   };
 
-  const handleCheckboxChange = (name: 'inStock' | 'bestseller' | 'hotDeal') => {
+  const handleCheckboxChange = (name: 'inStock' | 'hotDeal') => {
     setFormData((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const handleArrayChange = (field: 'features' | 'tags' | 'sizes', value: string) => {
-    const items = value.split(',').map(item => item.trim()).filter(item => item);
-    setFormData((prev) => ({ ...prev, [field]: items }));
+  // Size handlers
+  const handleSizeChange = (index: number, field: 'name' | 'price', value: string | number) => {
+    const newSizes = [...(formData.sizes || [])];
+    newSizes[index] = { ...newSizes[index], [field]: field === 'price' ? Number(value) || 0 : value };
+    setFormData((prev) => ({ ...prev, sizes: newSizes }));
+  };
+
+  const addSize = () => {
+    setFormData((prev) => ({
+      ...prev,
+      sizes: [...(prev.sizes || []), { name: '', price: prev.price || 0 }]
+    }));
+  };
+
+  const removeSize = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizes: (prev.sizes || []).filter((_, i) => i !== index)
+    }));
   };
 
   const handleColorChange = (index: number, field: 'name' | 'value', value: string) => {
@@ -288,33 +297,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     }));
   };
 
-  // Size Variant Handlers
-  const handleSizeVariantChange = (index: number, field: string, value: any) => {
-    const newSizeVariants = [...(formData.sizeVariants || [])];
-    newSizeVariants[index] = { ...newSizeVariants[index], [field]: value };
-    setFormData((prev) => ({ ...prev, sizeVariants: newSizeVariants }));
-  };
-
-  const addSizeVariant = () => {
-    setFormData((prev) => ({
-      ...prev,
-      sizeVariants: [...(prev.sizeVariants || []), { 
-        size: '', 
-        price: prev.price || 0, 
-        originalPrice: prev.originalPrice || 0, 
-        inStock: true, 
-        stockQuantity: 0 
-      }]
-    }));
-  };
-
-  const removeSizeVariant = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      sizeVariants: (prev.sizeVariants || []).filter((_, i) => i !== index)
-    }));
-  };
-
   const handleSpecificationChange = (key: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -325,13 +307,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const addSpecification = () => {
     setShowSpecModal(true);
     setNewSpecKey('');
+    setNewSpecValue('');
   };
 
   const handleAddSpecificationSubmit = () => {
     if (newSpecKey && newSpecKey.trim()) {
-      handleSpecificationChange(newSpecKey.trim(), '');
+      handleSpecificationChange(newSpecKey.trim(), newSpecValue.trim());
       setShowSpecModal(false);
       setNewSpecKey('');
+      setNewSpecValue('');
     }
   };
 
@@ -376,8 +360,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           images: Array.isArray(parsed.images) ? parsed.images : [],
           colors: Array.isArray(parsed.colors) ? parsed.colors : [],
           sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
-          features: Array.isArray(parsed.features) ? parsed.features : [],
-          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
           specifications: parsed.specifications || {},
         };
         setFormData(normalizedData);
@@ -417,14 +399,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         value: color.value || '',
         images: ((color as any).images || []).filter((img: string) => img && img.trim())
       })).filter(color => color.name && color.value),
-      // Clean size variants with proper number types
-      sizeVariants: (formData.sizeVariants || []).map(variant => ({
-        size: variant.size || '',
-        price: Number(variant.price) || 0,
-        originalPrice: Number(variant.originalPrice) || 0,
-        inStock: variant.inStock !== false,
-        stockQuantity: Number(variant.stockQuantity) || 0
-      })).filter(variant => variant.size),
+      // Clean sizes with proper structure
+      sizes: (formData.sizes || []).map((size: any) => ({
+        name: size.name || '',
+        price: Number(size.price) || 0
+      })).filter((size: any) => size.name),
       // Ensure required fields are present and properly typed
       price: Number(formData.price) || 0,
       originalPrice: Number(formData.originalPrice) || 0,
@@ -432,9 +411,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       reviews: Number(formData.reviews) || 0,
       // Remove any undefined or null values
       images: (formData.images || []).filter(img => img && img.trim()),
-      features: (formData.features || []).filter(feature => feature && feature.trim()),
-      tags: (formData.tags || []).filter(tag => tag && tag.trim()),
-      sizes: (formData.sizes || []).filter(size => size && size.trim()),
       // Ensure specifications is an object
       specifications: formData.specifications || {},
     };
@@ -611,19 +587,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="bestseller"
-                      checked={formData.bestseller}
-                      onCheckedChange={() => handleCheckboxChange('bestseller')}
-                    />
-                    <Label htmlFor="bestseller">Bestseller</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
                       id="hotDeal"
                       checked={formData.hotDeal}
                       onCheckedChange={() => handleCheckboxChange('hotDeal')}
                     />
                     <Label htmlFor="hotDeal">Hot Deals</Label>
+                    <span className="text-xs text-gray-500">(Syncs with homepage)</span>
                   </div>
                 </div>
               </div>
@@ -791,80 +760,44 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                   )}
                 </div>
 
-                {/* Size Variants with Prices */}
+                {/* Sizes with Prices */}
                 <div className="border rounded-xl p-5 bg-gray-50 dark:bg-gray-900">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">Size Variants</h3>
-                      <p className="text-sm text-gray-500 mt-1">Set different prices for each size. Leave empty to use default price.</p>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-white">Sizes & Prices</h3>
+                      <p className="text-sm text-gray-500 mt-1">Add size options with their prices (e.g., 250g, 500g, 1kg)</p>
                     </div>
-                    <Button type="button" onClick={addSizeVariant} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button type="button" onClick={addSize} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Size
                     </Button>
                   </div>
                   <div className="space-y-3">
-                    {(formData.sizeVariants || []).map((variant, index) => (
-                      <div key={index} className="flex items-start space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg border">
-                        <div className="flex-1 grid grid-cols-5 gap-4">
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Size</Label>
-                            <Input
-                              placeholder="S, M, L..."
-                              value={variant.size}
-                              onChange={(e) => handleSizeVariantChange(index, 'size', e.target.value)}
-                              className="h-10"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Price (₹)</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="Enter price"
-                              value={variant.price || ''}
-                              onChange={(e) => handleSizeVariantChange(index, 'price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                              className="h-10"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Original Price</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="Enter price"
-                              value={variant.originalPrice || ''}
-                              onChange={(e) => handleSizeVariantChange(index, 'originalPrice', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                              className="h-10"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Stock Qty</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              placeholder="Enter qty"
-                              value={variant.stockQuantity || ''}
-                              onChange={(e) => handleSizeVariantChange(index, 'stockQuantity', e.target.value === '' ? 0 : parseInt(e.target.value))}
-                              className="h-10"
-                            />
-                          </div>
-                          <div className="flex items-end pb-1">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`sizeInStock-${index}`}
-                                checked={variant.inStock !== false}
-                                onCheckedChange={(checked) => handleSizeVariantChange(index, 'inStock', checked)}
-                              />
-                              <Label htmlFor={`sizeInStock-${index}`} className="text-xs">In Stock</Label>
-                            </div>
-                          </div>
+                    {(formData.sizes || []).map((size: any, index: number) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                        <div className="flex-1">
+                          <Label className="text-xs text-gray-500 mb-1 block">Size Name</Label>
+                          <Input
+                            placeholder="250g, 500g, 1kg, S, M, L..."
+                            value={size.name || ''}
+                            onChange={(e) => handleSizeChange(index, 'name', e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="w-32">
+                          <Label className="text-xs text-gray-500 mb-1 block">Price (₹)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="Price"
+                            value={size.price || ''}
+                            onChange={(e) => handleSizeChange(index, 'price', e.target.value)}
+                            className="h-9"
+                          />
                         </div>
                         <Button
                           type="button"
-                          onClick={() => removeSizeVariant(index)}
+                          onClick={() => removeSize(index)}
                           size="sm"
                           variant="destructive"
                           className="mt-5"
@@ -873,45 +806,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                         </Button>
                       </div>
                     ))}
-                    {(formData.sizeVariants || []).length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-4">No size variants. Product will use the default price for all sizes.</p>
+                    {(formData.sizes || []).length === 0 && (
+                      <p className="text-sm text-gray-400 text-center py-4">No sizes added. Product will use the base price.</p>
                     )}
                   </div>
-                </div>
-
-                {/* Simple Sizes (fallback) */}
-                <div>
-                  <Label htmlFor="sizes">Simple Sizes (comma-separated, used if no Size Variants)</Label>
-                  <Input
-                    id="sizes"
-                    placeholder="S, M, L, XL"
-                    value={(formData.sizes || []).join(', ')}
-                    onChange={(e) => handleArrayChange('sizes', e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Use this for simple size options without price variations</p>
-                </div>
-
-                {/* Features */}
-                <div>
-                  <Label htmlFor="features">Features (comma-separated)</Label>
-                  <Textarea
-                    id="features"
-                    placeholder="Wireless charging, Water resistant, Fast charging"
-                    value={(formData.features || []).join(', ')}
-                    onChange={(e) => handleArrayChange('features', e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                {/* Tags */}
-                <div>
-                  <Label htmlFor="tags">Tags (comma-separated)</Label>
-                  <Input
-                    id="tags"
-                    placeholder="electronics, accessories, wireless"
-                    value={(formData.tags || []).join(', ')}
-                    onChange={(e) => handleArrayChange('tags', e.target.value)}
-                  />
                 </div>
 
                 {/* Specifications */}
@@ -923,31 +821,37 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                       Add Specification
                     </Button>
                   </div>
-                  <div className="space-y-2">
-                    {Object.entries(formData.specifications || {}).map(([key, value]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Input
-                          value={key}
-                          readOnly
-                          className="flex-1 bg-gray-100 dark:bg-gray-700"
-                        />
-                        <Input
-                          placeholder="Value"
-                          value={String(value)}
-                          onChange={(e) => handleSpecificationChange(key, e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => removeSpecification(key)}
-                          size="sm"
-                          variant="destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  {Object.keys(formData.specifications || {}).length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-4">No specifications added yet. Click "Add Specification" to add product details like Material, Weight, Dimensions, etc.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {Object.entries(formData.specifications || {}).map(([key, value]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                          <Input
+                            value={key}
+                            readOnly
+                            className="flex-1 bg-gray-100 dark:bg-gray-700 font-medium"
+                            title="Specification name (read-only)"
+                          />
+                          <Input
+                            placeholder="Enter value..."
+                            value={String(value)}
+                            onChange={(e) => handleSpecificationChange(key, e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => removeSpecification(key)}
+                            size="sm"
+                            variant="destructive"
+                            title="Remove specification"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1122,28 +1026,41 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold mb-4">Add Specification</h3>
-            <Label htmlFor="specKey" className="mb-2 block">Specification Key</Label>
-            <Input
-              id="specKey"
-              placeholder="e.g., Material, Weight, Dimensions"
-              value={newSpecKey}
-              onChange={(e) => setNewSpecKey(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddSpecificationSubmit();
-                }
-              }}
-              autoFocus
-              className="mb-4"
-            />
-            <div className="flex justify-end space-x-3">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="specKey" className="mb-2 block">Specification Name</Label>
+                <Input
+                  id="specKey"
+                  placeholder="e.g., Material, Weight, Dimensions"
+                  value={newSpecKey}
+                  onChange={(e) => setNewSpecKey(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <Label htmlFor="specValue" className="mb-2 block">Specification Value</Label>
+                <Input
+                  id="specValue"
+                  placeholder="e.g., Cotton, 500g, 10 x 20 x 5 cm"
+                  value={newSpecValue}
+                  onChange={(e) => setNewSpecValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSpecificationSubmit();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   setShowSpecModal(false);
                   setNewSpecKey('');
+                  setNewSpecValue('');
                 }}
               >
                 Cancel

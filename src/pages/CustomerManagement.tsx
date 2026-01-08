@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import CustomerDetailModal from '../components/modals/CustomerDetailModal';
 import toast from 'react-hot-toast';
+import { authFetch } from '../services/api';
 import {
   Search,
   Download,
@@ -91,7 +92,7 @@ const CustomerManagement: React.FC = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`http://localhost:5001/api/admin/customers?${params}`);
+      const response = await authFetch(`http://localhost:5001/api/admin/customers?${params}`);
       const data = await response.json();
 
       if (data.success) {
@@ -112,7 +113,7 @@ const CustomerManagement: React.FC = () => {
   const loadInquiries = async () => {
     try {
       setInquiriesLoading(true);
-      const response = await fetch('http://localhost:5001/api/contact');
+      const response = await authFetch('http://localhost:5001/api/contact');
       const data = await response.json();
 
       if (data.success) {
@@ -135,9 +136,8 @@ const CustomerManagement: React.FC = () => {
   const updateInquiryStatus = async (inquiryId: string, status: string) => {
     try {
       const loadingToast = toast.loading('Updating status...');
-      const response = await fetch(`http://localhost:5001/api/contact/${inquiryId}`, {
+      const response = await authFetch(`http://localhost:5001/api/contact/${inquiryId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
       const data = await response.json();
@@ -158,7 +158,7 @@ const CustomerManagement: React.FC = () => {
   const deleteInquiry = async (inquiryId: string) => {
     try {
       const loadingToast = toast.loading('Deleting inquiry...');
-      const response = await fetch(`http://localhost:5001/api/contact/${inquiryId}`, {
+      const response = await authFetch(`http://localhost:5001/api/contact/${inquiryId}`, {
         method: 'DELETE'
       });
       const data = await response.json();
@@ -183,7 +183,7 @@ const CustomerManagement: React.FC = () => {
     
     if (inquiry.status === 'new') {
       try {
-        await fetch(`http://localhost:5001/api/contact/${inquiry._id}/read`, {
+        await authFetch(`http://localhost:5001/api/contact/${inquiry._id}/read`, {
           method: 'PATCH'
         });
         loadInquiries(); // Refresh to update status
@@ -234,7 +234,7 @@ const CustomerManagement: React.FC = () => {
     try {
       const loadingToast = toast.loading('Exporting customers...');
       
-      const response = await fetch('http://localhost:5001/api/admin/customers/export?format=csv');
+      const response = await authFetch('http://localhost:5001/api/admin/customers/export?format=csv');
       const blob = await response.blob();
       
       const url = window.URL.createObjectURL(blob);

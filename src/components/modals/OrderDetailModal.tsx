@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import toast from 'react-hot-toast';
+import { getImageUrl } from '../../utils/imageUrl';
 import {
   X,
   User,
@@ -531,7 +532,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                         <div className="flex items-center space-x-3">
                           {item.product?.images && item.product.images[0] && (
                             <img
-                              src={`http://localhost:5001/api/images/${item.product.images[0]}`}
+                              src={getImageUrl(item.product.images[0])}
                               alt={item.name}
                               className="w-12 h-12 object-cover rounded-md"
                             />

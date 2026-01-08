@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { X, Search, Check } from 'lucide-react';
+import { getImageUrl } from '../utils/imageUrl';
 
 interface Product {
   _id: string;
@@ -126,7 +127,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
                     <div className="relative">
                       {product.images[0] && (
                         <img
-                          src={`/siteconfig-api/images/${product.images[0]}`}
+                          src={getImageUrl(product.images[0])}
                           alt={product.name}
                           className="w-full h-32 object-cover rounded mb-3"
                         />

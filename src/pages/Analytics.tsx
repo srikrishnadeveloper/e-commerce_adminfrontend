@@ -23,6 +23,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { authFetch } from '../services/api';
 
 // Types
 interface AnalyticsMetrics {
@@ -141,14 +142,14 @@ const Analytics: React.FC = () => {
 
       const dateParams = `startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&originalRevenue=true`;
 
-      // Fetch from all endpoints in parallel
+      // Fetch from all endpoints in parallel with authentication
       const [dashboardRes, revenueRes, ordersRes, customersRes, productsRes, recentOrdersRes] = await Promise.all([
-        fetch(`http://localhost:5001/api/analytics/dashboard?timeframe=${timeframe}`).catch(() => null),
-        fetch(`http://localhost:5001/api/analytics/revenue?${dateParams}`).catch(() => null),
-        fetch(`http://localhost:5001/api/analytics/orders?${dateParams}`).catch(() => null),
-        fetch(`http://localhost:5001/api/analytics/customers?${dateParams}`).catch(() => null),
-        fetch(`http://localhost:5001/api/products/stats`).catch(() => null),
-        fetch(`http://localhost:5001/api/admin/orders?limit=5&sort=-createdAt`).catch(() => null)
+        authFetch(`http://localhost:5001/api/analytics/dashboard?timeframe=${timeframe}`).catch(() => null),
+        authFetch(`http://localhost:5001/api/analytics/revenue?${dateParams}`).catch(() => null),
+        authFetch(`http://localhost:5001/api/analytics/orders?${dateParams}`).catch(() => null),
+        authFetch(`http://localhost:5001/api/analytics/customers?${dateParams}`).catch(() => null),
+        authFetch(`http://localhost:5001/api/products/stats`).catch(() => null),
+        authFetch(`http://localhost:5001/api/admin/orders?limit=5&sort=-createdAt`).catch(() => null)
       ]);
 
       // Parse responses
@@ -279,7 +280,7 @@ const Analytics: React.FC = () => {
     // Fallback to direct API call if still no data
     if (!totalCustomers) {
       try {
-        const customersRes = await fetch('http://localhost:5001/api/customers');
+        const customersRes = await authFetch('http://localhost:5001/api/admin/customers');
         if (customersRes.ok) {
           const data = await customersRes.json();
           totalCustomers = data.totalCount || data.total || (Array.isArray(data.data) ? data.data.length : 0) || (Array.isArray(data) ? data.length : 0) || 0;
@@ -483,9 +484,6 @@ const Analytics: React.FC = () => {
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 text-white">
           <div className="flex items-center justify-between mb-2">
             <IndianRupee className="h-5 w-5 opacity-80" />
-            <span className={`text-xs px-2 py-0.5 rounded-full ${revenue.revenueGrowth >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-              {revenue.revenueGrowth >= 0 ? '+' : ''}{revenue.revenueGrowth}%
-            </span>
           </div>
           <p className="text-2xl font-bold">{formatCurrency(revenue.totalRevenue)}</p>
           <p className="text-xs opacity-80 mt-1">Total Revenue</p>
@@ -494,9 +492,6 @@ const Analytics: React.FC = () => {
         <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-4 text-white">
           <div className="flex items-center justify-between mb-2">
             <ShoppingCart className="h-5 w-5 opacity-80" />
-            <span className={`text-xs px-2 py-0.5 rounded-full ${revenue.orderGrowth >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-              {revenue.orderGrowth >= 0 ? '+' : ''}{revenue.orderGrowth}%
-            </span>
           </div>
           <p className="text-2xl font-bold">{formatNumber(orders.totalOrders)}</p>
           <p className="text-xs opacity-80 mt-1">Total Orders</p>
@@ -551,13 +546,19 @@ const Analytics: React.FC = () => {
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                   </linearGradient>
+                  <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="date" stroke="#9CA3AF" fontSize={12} />
-                <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                <YAxis yAxisId="left" stroke="#9CA3AF" fontSize={12} tickFormatter={(value) => `₹${(value/1000).toFixed(0)}K`} />
+                <YAxis yAxisId="right" orientation="right" stroke="#9CA3AF" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
+                <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
+                <Area yAxisId="right" type="monotone" dataKey="orders" stroke="#10B981" fillOpacity={1} fill="url(#colorOrders)" name="Orders" />
               </AreaChart>
             ) : chartType === 'line' ? (
               <LineChart data={revenueByDay}>

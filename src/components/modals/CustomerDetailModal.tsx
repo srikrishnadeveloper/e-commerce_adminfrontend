@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
+import { authFetch } from '../../services/api';
 import { 
   X, 
   Calendar, 
@@ -80,7 +81,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5001/api/admin/customers/${customerId}`);
+      const response = await authFetch(`http://localhost:5001/api/admin/customers/${customerId}`);
       const data = await response.json();
 
       if (data.success) {

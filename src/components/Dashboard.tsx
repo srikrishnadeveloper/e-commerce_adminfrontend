@@ -191,6 +191,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         
         toast.success('Product updated successfully!', { id: loadingToast });
         
+        // Sync hotDeal status with SiteConfig
+        await syncHotDealWithConfig(savedProduct._id, savedProduct.hotDeal);
+        
         // Keep modal open after update, just refresh the editing product data
         setEditingProduct(savedProduct);
       } else {
@@ -206,6 +209,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setProducts([savedProduct, ...products]);
         
         toast.success('Product created successfully!', { id: loadingToast });
+        
+        // Sync hotDeal status with SiteConfig for new product
+        if (savedProduct.hotDeal) {
+          await syncHotDealWithConfig(savedProduct._id, true);
+        }
         
         // Close modal only after creating a new product
         setIsEditModalOpen(false);
@@ -231,6 +239,52 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Sync hotDeal status with SiteConfig
+  const syncHotDealWithConfig = async (productId: string, isHotDeal: boolean) => {
+    try {
+      // Get current site config
+      const configRes = await fetch('/siteconfig-api/siteconfig/all');
+      if (!configRes.ok) return;
+      
+      const configData = await configRes.json();
+      const currentConfig = configData.data || {};
+      
+      // Get current hot deals product IDs
+      let hotDealIds: string[] = currentConfig.homepage?.hotDealsSection?.productIds || [];
+      
+      if (isHotDeal && !hotDealIds.includes(productId)) {
+        // Add product to hot deals
+        hotDealIds = [...hotDealIds, productId];
+      } else if (!isHotDeal && hotDealIds.includes(productId)) {
+        // Remove product from hot deals
+        hotDealIds = hotDealIds.filter(id => id !== productId);
+      } else {
+        // No change needed
+        return;
+      }
+      
+      // Update site config
+      const updatedConfig = {
+        ...currentConfig,
+        homepage: {
+          ...currentConfig.homepage,
+          hotDealsSection: {
+            ...currentConfig.homepage?.hotDealsSection,
+            productIds: hotDealIds
+          }
+        }
+      };
+      
+      await fetch('/siteconfig-api/siteconfig/all', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: updatedConfig, version: 1 })
+      });
+    } catch (error) {
+      console.error('Error syncing hot deal with config:', error);
     }
   };
 

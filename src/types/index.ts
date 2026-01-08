@@ -4,14 +4,6 @@ export interface Color {
   images?: string[]; // Array of image URLs for this color variant
 }
 
-export interface SizeVariant {
-  size: string;
-  price: number;
-  originalPrice?: number;
-  inStock: boolean;
-  stockQuantity?: number;
-}
-
 export interface ProductVariant {
   _id?: string;
   sku?: string;
@@ -66,6 +58,11 @@ export interface Category {
   fullSlug: string;
 }
 
+export interface SizeOption {
+  name: string;
+  price: number;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -75,17 +72,13 @@ export interface Product {
   category: string;
   categoryId: string;
   inStock: boolean;
-  bestseller: boolean;
   hotDeal: boolean;
   rating: number;
   reviews: number;
   images: string[];
   colors: Color[];
-  sizes: string[];
-  sizeVariants: SizeVariant[];
-  features: string[];
+  sizes: SizeOption[];
   specifications: Specifications;
-  tags: string[];
   shipping?: Shipping;
   stockQuantity?: number;
   reservedQuantity?: number;

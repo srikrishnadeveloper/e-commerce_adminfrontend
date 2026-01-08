@@ -2,6 +2,7 @@ import React from 'react';
 import type { Product } from '../../types';
 import { Button } from '../ui/button';
 import { Eye, Edit, Trash2, Star } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface ProductGridProps {
   products: Product[];
@@ -11,10 +12,7 @@ interface ProductGridProps {
   formatPrice: (price: number) => string;
 }
 
-const resolveImg = (p?: string) => {
-  if (!p) return 'http://localhost:5001/api/images/placeholder.svg';
-  return p.startsWith('http') ? p : `http://localhost:5001/api${p}`;
-};
+const resolveImg = (p?: string) => getImageUrl(p);
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, onView, onEdit, onDelete, formatPrice }) => {
   return (

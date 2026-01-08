@@ -6,6 +6,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { X } from 'lucide-react';
 import ImageSelectorModal from './ImageSelectorModal';
+import { getImageUrl } from '../../utils/imageUrl';
 
 import type { Product, Category } from '../../types';
 
@@ -200,7 +201,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                       <div className="flex items-center space-x-3">
                         {product.images && product.images[0] && (
                           <img
-                            src={product.images[0]}
+                            src={getImageUrl(product.images[0])}
                             alt={product.name}
                             className="w-12 h-12 max-w-12 max-h-12 object-cover rounded"
                             style={{

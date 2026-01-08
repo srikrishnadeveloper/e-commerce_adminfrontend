@@ -83,14 +83,18 @@ const BulkEmailSender: React.FC = () => {
         content
       });
 
-      if (data.status === 'success') {
+      console.log('Preview response:', data);
+
+      if (data.status === 'success' && data.data?.html) {
         setPreviewHtml(data.data.html);
         setShowPreview(true);
       } else {
+        console.error('Preview failed:', data);
         toast.error('Failed to generate preview');
       }
     } catch (error) {
-      toast.error('Failed to generate preview');
+      console.error('Preview error:', error);
+      toast.error(`Failed to generate preview: ${error.message || 'Unknown error'}`);
     }
   };
 

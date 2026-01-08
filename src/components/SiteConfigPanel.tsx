@@ -19,7 +19,8 @@ import {
   History,
   CheckCircle,
   AlertCircle,
-  Code
+  Code,
+  ShoppingBag
 } from 'lucide-react';
 import ImageSelectorModal from './modals/ImageSelectorModal';
 import ProductSelectorModal from './ProductSelectorModal';
@@ -33,6 +34,7 @@ import HeroTab from './siteconfig/HeroTab';
 import FooterTab from './siteconfig/FooterTab';
 import ContactUsTab from './siteconfig/ContactUsTab';
 import AboutUsTab from './siteconfig/AboutUsTab';
+import ProductPagesTab from './siteconfig/ProductPagesTab';
 
 import JsonTab from './siteconfig/JsonTab';
 
@@ -65,6 +67,7 @@ const SiteConfigPanel: React.FC = () => {
     { id: 'announcement', label: 'Announcement', icon: MessageSquare },
     { id: 'homepage', label: 'Homepage', icon: Home },
     { id: 'hero', label: 'Hero Section', icon: Image },
+    { id: 'productpages', label: 'Product Pages', icon: ShoppingBag },
     { id: 'footer', label: 'Footer', icon: Building },
     { id: 'contactus', label: 'Contact Us', icon: MessageSquare },
     { id: 'aboutus', label: 'About Us', icon: Building },
@@ -362,6 +365,13 @@ const SiteConfigPanel: React.FC = () => {
             removeArrayItem={removeArrayItem}
             setPickerTarget={setPickerTarget}
             setPickerOpen={setPickerOpen}
+          />
+        );
+      case 'productpages':
+        return (
+          <ProductPagesTab
+            config={config}
+            updateConfig={updateConfig}
           />
         );
       case 'footer':

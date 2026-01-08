@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Plus, Trash2 } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageUrl';
 
 interface SiteConfig {
   hero?: {
@@ -12,6 +13,7 @@ interface SiteConfig {
       button: string;
       buttonLink: string;
       image: string;
+      textColor?: string;
     }>;
   };
 }
@@ -43,7 +45,8 @@ const HeroTab: React.FC<HeroTabProps> = ({
           subheading: '',
           button: '',
           buttonLink: '',
-          image: ''
+          image: '',
+          textColor: '#000000'
         })}
         size="sm"
         className="flex items-center gap-2"
@@ -89,6 +92,23 @@ const HeroTab: React.FC<HeroTabProps> = ({
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Text Color</label>
+              <div className="flex gap-2">
+                <Input
+                  type="color"
+                  value={slide.textColor || '#000000'}
+                  onChange={(e) => updateConfig(`hero.slides.${index}.textColor`, e.target.value)}
+                  className="w-20 h-10 cursor-pointer"
+                />
+                <Input
+                  value={slide.textColor || '#000000'}
+                  onChange={(e) => updateConfig(`hero.slides.${index}.textColor`, e.target.value)}
+                  placeholder="#000000"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-foreground mb-1">Image URL <span className="text-xs text-gray-500">(Recommended: 1400 x 909)</span></label>
               <div className="flex gap-2">
                 <Input
@@ -101,7 +121,7 @@ const HeroTab: React.FC<HeroTabProps> = ({
               {slide.image && (
                 <div className="mt-2">
                   <img
-                    src={slide.image.startsWith('http') ? slide.image : `http://localhost:5001${slide.image}`}
+                    src={getImageUrl(slide.image)}
                     alt={`Slide ${index + 1}`}
                     className="w-24 h-24 object-cover rounded border"
                   />

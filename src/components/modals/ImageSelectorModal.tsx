@@ -116,9 +116,11 @@ const ImageSelectorModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) => {
     }
   };
 
-  const handleDeleteImage = async (imageName: string) => {
+  const handleDeleteImage = async (imagePath: string) => {
     try {
-      await imagesAPI.delete(imageName);
+      // Extract the relative path after /images/
+      const relativePath = imagePath.replace(/^\/images\//, '');
+      await imagesAPI.delete(relativePath);
       toast.success('Image deleted successfully');
       await loadImages();
     } catch (error: any) {
@@ -248,7 +250,7 @@ const ImageSelectorModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteImage(img.name);
+                          handleDeleteImage(img.path);
                         }}
                         className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                         title="Delete image"

@@ -52,6 +52,24 @@ export const setApiBase = (base: string) => {
 
 export const getApiBase = () => API_BASE_URL;
 
+// Helper function for authenticated fetch calls
+export const authFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const token = localStorage.getItem('adminToken');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+  
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+};
+
 // Try candidates until one responds to /health
 export const ensureApiBase = async () => {
   for (const base of CANDIDATE_BASES) {
@@ -166,7 +184,7 @@ export const imagesAPI = {
     return response.data;
   },
   delete: async (filename: string) => {
-    const response = await api.delete(`/images/${filename}`);
+    const response = await api.delete(`/images/${encodeURIComponent(filename)}`);
     return response.data;
   }
 };

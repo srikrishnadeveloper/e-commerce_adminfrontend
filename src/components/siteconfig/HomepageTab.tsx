@@ -3,6 +3,37 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageUrl';
+import * as Icons from 'lucide-react';
+
+// Available icons for features section (all verified Lucide React icons)
+const AVAILABLE_ICONS = [
+  // Shipping & Delivery
+  'Truck', 'Package', 'ShoppingCart', 'ShoppingBag', 'Store',
+  // Customer Support
+  'Headphones', 'MessageCircle', 'Phone', 'Mail', 'HelpCircle',
+  // Returns & Exchange
+  'RotateCcw', 'RefreshCw', 'ArrowLeftRight', 'Repeat',
+  // Security & Payment
+  'Shield', 'ShieldCheck', 'Lock', 'Key', 'CreditCard',
+  // Speed & Performance
+  'Clock', 'Timer', 'Zap', 'TrendingUp', 'Activity',
+  // Quality & Awards
+  'Award', 'BadgeCheck', 'Medal', 'Trophy', 'Star',
+  // Customer Satisfaction
+  'Heart', 'ThumbsUp', 'Smile', 'Users', 'UserCheck',
+  // Offers & Deals
+  'Gift', 'Sparkles', 'Tag', 'Percent', 'DollarSign',
+  // Location & Global
+  'Globe', 'MapPin', 'Navigation2', 'Compass', 'Map',
+  // Verification
+  'Check', 'CheckCircle', 'CheckCircle2', 'CheckSquare',
+  // Eco-Friendly
+  'Leaf', 'Recycle', 'Sun', 'Moon', 'Droplet',
+  // Business & Operations
+  'Box', 'PackageOpen', 'Layers', 'Archive', 'Briefcase',
+  'Home', 'Building', 'Building2', 'Factory'
+];
 
 interface SiteConfig {
   homepage?: {
@@ -202,25 +233,32 @@ const HomepageTab: React.FC<HomepageTabProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Icon URL</label>
-                <div className="flex gap-2">
-                  <Input
+                <label className="block text-sm font-medium text-foreground mb-1">Icon</label>
+                <div className="flex gap-2 items-center">
+                  <select
                     value={feature.icon}
                     onChange={(e) => updateConfig(`homepage.featuresSection.features.${index}.icon`, e.target.value)}
-                    placeholder="/icons/shipping.svg"
-                    disabled={config.homepage?.featuresSection?.enabled === false}
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => { 
-                      setPickerTarget(`homepage.featuresSection.features.${index}.icon`); 
-                      setPickerOpen(true); 
-                    }}
+                    className="flex-1 px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white [&>option]:bg-gray-800 [&>option]:text-white"
                     disabled={config.homepage?.featuresSection?.enabled === false}
                   >
-                    Select
-                  </Button>
+                    <option value="" className="bg-gray-800 text-white">Select an icon...</option>
+                    {AVAILABLE_ICONS.map(iconName => {
+                      const IconComponent = Icons[iconName as keyof typeof Icons];
+                      return (
+                        <option key={iconName} value={iconName} className="bg-gray-800 text-white">
+                          {iconName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {feature.icon && (() => {
+                    const IconComponent = Icons[feature.icon as keyof typeof Icons];
+                    return IconComponent ? (
+                      <div className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded border border-gray-600">
+                        <IconComponent className="w-6 h-6 text-white" />
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </div>
@@ -484,7 +522,7 @@ const HomepageTab: React.FC<HomepageTabProps> = ({
                 {collection.image && (
                   <div className="mt-2">
                     <img
-                      src={collection.image.startsWith('http') ? collection.image : `http://localhost:5001${collection.image}`}
+                      src={getImageUrl(collection.image)}
                       alt={`Collection ${index + 1}`}
                       className="w-24 h-24 object-cover rounded border"
                     />
