@@ -23,7 +23,11 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronDown,
+  CreditCard,
+  Ban,
+  RotateCcw
 } from 'lucide-react';
 
 // Types
@@ -58,6 +62,14 @@ interface Order {
     state: string;
     postalCode: string;
     phone: string;
+  };
+  returnRequest?: {
+    requested: boolean;
+    message?: string;
+    requestedAt?: string;
+    status?: 'pending' | 'approved' | 'rejected' | 'completed';
+    adminResponse?: string;
+    respondedAt?: string;
   };
 }
 
@@ -103,6 +115,7 @@ const OrderManagement: React.FC = () => {
   const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
   const [bulkStatus, setBulkStatus] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -357,6 +370,87 @@ const OrderManagement: React.FC = () => {
     }
   };
 
+  // Quick status update for single order
+  const handleQuickStatusUpdate = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await authFetch(`http://localhost:5001/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: newStatus,
+          notes: `Quick status update to ${newStatus}`
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Order status updated to ${newStatus}`);
+        fetchOrders();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      console.error('Quick status update error:', error);
+      toast.error(error.message || 'Failed to update order status');
+    }
+  };
+
+  // Quick payment status update
+  const handleQuickPaymentUpdate = async (orderId: string, newPaymentStatus: string) => {
+    try {
+      const response = await authFetch(`http://localhost:5001/api/admin/orders/${orderId}/payment`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          paymentStatus: newPaymentStatus,
+          notes: `Quick payment status update to ${newPaymentStatus}`
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Payment status updated to ${newPaymentStatus}`);
+        fetchOrders();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      console.error('Quick payment update error:', error);
+      toast.error(error.message || 'Failed to update payment status');
+    }
+  };
+
+  // Handle return request response
+  const handleReturnResponse = async (orderId: string, status: 'approved' | 'rejected') => {
+    try {
+      const response = await authFetch(`http://localhost:5001/api/admin/orders/${orderId}/return`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Return request ${status}`);
+        fetchOrders();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      console.error('Return response error:', error);
+      toast.error(error.message || 'Failed to respond to return request');
+    }
+  };
+
+  // Get next valid status options for an order
+  const getNextStatusOptions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'pending': return [{ value: 'processing', label: 'Processing' }, { value: 'cancelled', label: 'Cancel' }];
+      case 'processing': return [{ value: 'shipped', label: 'Shipped' }, { value: 'cancelled', label: 'Cancel' }];
+      case 'shipped': return [{ value: 'delivered', label: 'Delivered' }];
+      case 'delivered': return [];
+      case 'cancelled': return [];
+      default: return [];
+    }
+  };
+
   // Clear all filters
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -601,7 +695,14 @@ const OrderManagement: React.FC = () => {
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order._id} className="border-b border-border hover:bg-muted/30">
+                  <tr 
+                    key={order._id} 
+                    className={`border-b border-border hover:bg-muted/30 ${
+                      order.returnRequest?.requested && order.returnRequest?.status === 'pending' 
+                        ? 'bg-gray-200/50 dark:bg-gray-700/30' 
+                        : ''
+                    }`}
+                  >
                     <td className="py-4 px-6">
                       <input
                         type="checkbox"
@@ -611,9 +712,17 @@ const OrderManagement: React.FC = () => {
                       />
                     </td>
                     <td className="py-4 px-6">
-                      <span className="font-mono text-sm text-foreground">
-                        #{order._id.slice(-8).toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm text-foreground">
+                          #{order._id.slice(-8).toUpperCase()}
+                        </span>
+                        {order.returnRequest?.requested && order.returnRequest?.status === 'pending' && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                            Return
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-6">
                       <div>
@@ -644,13 +753,146 @@ const OrderManagement: React.FC = () => {
                       <span className="text-sm text-muted-foreground">{order.createdAt ? formatDate(order.createdAt) : 'N/A'}</span>
                     </td>
                     <td className="py-4 px-6">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewOrder(order)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        {/* View Details Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewOrder(order)}
+                          title="View Details"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Quick Actions Dropdown */}
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setOpenActionMenu(openActionMenu === order._id ? null : order._id)}
+                            className="h-8 w-8 p-0"
+                            title="Quick Actions"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                          
+                          {openActionMenu === order._id && (
+                            <>
+                              {/* Backdrop to close menu */}
+                              <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setOpenActionMenu(null)}
+                              />
+                              
+                              {/* Dropdown Menu */}
+                              <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+                                {/* Quick Status Updates */}
+                                {getNextStatusOptions(order.status).length > 0 && (
+                                  <>
+                                    <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                      Update Status
+                                    </div>
+                                    {getNextStatusOptions(order.status).map((option) => (
+                                      <button
+                                        key={option.value}
+                                        onClick={() => {
+                                          handleQuickStatusUpdate(order._id, option.value);
+                                          setOpenActionMenu(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                                      >
+                                        {option.value === 'processing' && <RefreshCw className="h-4 w-4 text-blue-400" />}
+                                        {option.value === 'shipped' && <Truck className="h-4 w-4 text-purple-400" />}
+                                        {option.value === 'delivered' && <CheckCircle className="h-4 w-4 text-green-400" />}
+                                        {option.value === 'cancelled' && <Ban className="h-4 w-4 text-red-400" />}
+                                        <span>Mark as {option.label}</span>
+                                      </button>
+                                    ))}
+                                    <div className="border-t border-border my-1" />
+                                  </>
+                                )}
+                                
+                                {/* Payment Status */}
+                                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                  Payment
+                                </div>
+                                {order.paymentStatus !== 'paid' && (
+                                  <button
+                                    onClick={() => {
+                                      handleQuickPaymentUpdate(order._id, 'paid');
+                                      setOpenActionMenu(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                                  >
+                                    <CreditCard className="h-4 w-4 text-green-400" />
+                                    <span>Mark as Paid</span>
+                                  </button>
+                                )}
+                                {order.paymentStatus === 'paid' && (
+                                  <button
+                                    onClick={() => {
+                                      handleQuickPaymentUpdate(order._id, 'refunded');
+                                      setOpenActionMenu(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                                  >
+                                    <DollarSign className="h-4 w-4 text-orange-400" />
+                                    <span>Process Refund</span>
+                                  </button>
+                                )}
+                                
+                                {/* Return Request Actions */}
+                                {order.returnRequest?.requested && order.returnRequest?.status === 'pending' && (
+                                  <>
+                                    <div className="border-t border-border my-1" />
+                                    <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                      Return Request
+                                    </div>
+                                    <div className="px-3 py-1 text-xs text-muted-foreground italic">
+                                      "{order.returnRequest.message?.slice(0, 50)}..."
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        handleReturnResponse(order._id, 'approved');
+                                        setOpenActionMenu(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                                    >
+                                      <CheckCircle className="h-4 w-4 text-green-400" />
+                                      <span>Approve Return</span>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        handleReturnResponse(order._id, 'rejected');
+                                        setOpenActionMenu(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                                    >
+                                      <XCircle className="h-4 w-4 text-red-400" />
+                                      <span>Reject Return</span>
+                                    </button>
+                                  </>
+                                )}
+                                
+                                <div className="border-t border-border my-1" />
+                                
+                                {/* View Full Details */}
+                                <button
+                                  onClick={() => {
+                                    handleViewOrder(order);
+                                    setOpenActionMenu(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  <span>View Full Details</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))
